@@ -1,0 +1,45 @@
+﻿% !TEX TS-program = XeLaTeX
+
+\documentclass{article}
+
+\usepackage{polyglossia}
+\usepackage{fontspec}
+
+\setdefaultlanguage{ {{def_lang.long}} }
+\defaultfontfeatures{Ligatures=TeX}
+
+{% for lang in other_langs %}
+    \setotherlanguage{ {{lang.long}} }
+{% endfor %}
+
+\newfontfamily\englishfont{Linux Libertine O}
+\newfontfamily\brazilfont{Linux Libertine O}
+\newfontfamily\thaifont{Norasi}
+
+
+{% if fall_lang %}
+
+    {% if def_lang.short == "th" and fall_lang.short == "en" %}
+        \usepackage[Latin,Thai]{ucharclasses}
+        \setTransitionsForLatin
+        {\begingroup\englishfont}
+        {\endgroup}
+    {% endif %}
+
+{% endif %}
+
+
+
+\begin{document}
+
+
+
+\textbrazil{ação é português}
+\textenglish{this is english}
+\textthai{ดาวพุธมีหลุมอุกกาบาตจำนวนมากจนดูคล้ายดวงจันทร์}
+\end{document}
+
+
+
+
+

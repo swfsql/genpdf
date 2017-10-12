@@ -1,0 +1,16 @@
+[package]
+name = "genpdf"
+version = "0.1.0"
+authors = ["Thiago Machado da Silva <swfsql@gmail.com.br>"]
+
+[dependencies]
+tera = "0.10"
+serde = "1.0"
+serde_derive = "1.0"
+serde_yaml = "0.7"
+error-chain = "0.11.0"
+lazy_static = "0.2.9"
+semver = "0.8.0"
+
+# for thai language
+#chamkho = "0.1.0"
