@@ -1,43 +1,105 @@
 ﻿% !TEX TS-program = XeLaTeX
 
-\documentclass{article}
+% LianTze Lim templates helped a lot!
+% https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz
+% https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
 
-\usepackage{polyglossia}
-\usepackage{fontspec}
+\documentclass{article}%
 
-\setdefaultlanguage{ {{def_lang.long}} }
-\defaultfontfeatures{Ligatures=TeX}
+\usepackage{polyglossia}%
+\usepackage{fontspec}%
+%\usepackage[space]{xeCJK}
+\usepackage[Latin, Thai]{ucharclasses}
+
+
+\usepackage{xltxtra}
+
+
+{% if def_lang.short == "jp"  %}
+\setCJKmainfont{MS Mincho} % for \rmfamily
+\setCJKsansfont{MS Gothic} % for \sffamily
+{% elif def_lang.short == "zh" %}
+%\setCJKmainfont[
+%  BoldFont=WenQuanYi Zen Hei,
+%  ItalicFont=AR PL KaitiM GB]
+%  {AR PL SungtiL GB}
+%\setCJKsansfont{Noto Sans CJK SC}
+%\setCJKmonofont{cwTeXFangSong}
+{% elif def_lang.short == "th" %}
+\setmainlanguage[numerals=thai]{thai}%
+{% else %}
+\setmainlanguage{->{{def_lang.long}}}%
+\XeTeXlinebreaklocale "th_TH"
+\XeTeXlinebreakskip = 0pt plus 1pt  
+{% endif %}
+\defaultfontfeatures{Ligatures=TeX}%
 
 {% for lang in other_langs %}
-    \setotherlanguage{ {{lang.long}} }
+    {% if lang.short == "jp"  %}
+    {% elif lang.short == "zh"  %}
+    {% elif lang.short == "ko"  %}
+    {% else %}
+\setotherlanguage{->{{lang.long}}}%
+    {% endif %}
 {% endfor %}
 
-\newfontfamily\englishfont{Linux Libertine O}
-\newfontfamily\brazilfont{Linux Libertine O}
-\newfontfamily\thaifont{Norasi}
+\newfontfamily\defaultfont{Linux Libertine O}% Code2000
+\newfontfamily\latinfont{Linux Libertine O}%
+\newfontfamily\thaifont[Script=Thai]{Norasi}%
+\newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}
+%\newfontfamily{\cjkfont}{HAN NOM A}
+%\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
+%\newCJKfontfamily\japanfont{IPAex明朝}
+%\newCJKfontfamily\koreafont{Baekmuk Batang}
+
+\setDefaultTransitions{\defaultfont}{}
+
+\setTransitionsForLatin{\latinfont}{}
+%\setTransitionsForCJK{\cjkfont}{}
+%\setTransitionsForJapanese{\japanesefont}{}
+%\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
+\setTransitionTo{Thai}{\thaifont}
+
+\usepackage{markdown}
+\markdownSetup{
+	renderers = {
+	olItemWithNumber = {\item},
+	}
+}
+
+\begin{document}%
 
 
-{% if fall_lang %}
 
-    {% if def_lang.short == "th" and fall_lang.short == "en" %}
-        \usepackage[Latin,Thai]{ucharclasses}
-        \setTransitionsForLatin
-        {\begingroup\englishfont}
-        {\endgroup}
-    {% endif %}
+\begin{enumerate}
+	\item A
+	\item B	
+	\begin{enumerate}
+		\item a
+		\item b	
+		\item c	
+        	\begin{enumerate}
+                \item a
+                \item b	
+                \item c	
+            \end{enumerate}
+	\end{enumerate}
+	\item C	
+\end{enumerate}
 
-{% endif %}
+\markdownInput{test.md}%
+
+teste lalala
+
+ดาว
+
+teste lalala
 
 
-
-\begin{document}
-
-
-
-\textbrazil{ação é português}
-\textenglish{this is english}
-\textthai{ดาวพุธมีหลุมอุกกาบาตจำนวนมากจนดูคล้ายดวงจันทร์}
-\end{document}
+%\textbrazil{ação é português}%
+%\textenglish{this is english}%
+%\textthai{ดาวพุธมีหลุมอุกกาบาตจำนวนมากจนดูคล้ายดวงจันทร์}%
+\end{document}%
 
 
 

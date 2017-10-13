@@ -11,6 +11,7 @@ serde_yaml = "0.7"
 error-chain = "0.11.0"
 lazy_static = "0.2.9"
 semver = "0.8.0"
+regex = "0.2"
 
 # for thai language
 #chamkho = "0.1.0"

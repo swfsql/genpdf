@@ -9,6 +9,7 @@ extern crate serde_derive;
 extern crate lazy_static;
 extern crate serde_yaml;
 extern crate semver;
+extern crate regex;
 
 
 mod errors {
@@ -18,11 +19,12 @@ use errors::*;
 
 //use std::collections::BTreeMap;
 use std::fs::File;
+use std::io::Write;
 //use std::io::prelude::*;
 use tera::Tera;
 
 use semver::Version;
-
+use regex::Regex;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Info {
@@ -68,7 +70,10 @@ lazy_static! {
         //tera.register_filter("do_nothing", do_nothing_filter);
         tera
     };
+    pub static ref RE_FORWARD_ARROW: Regex = 
+        Regex::new("\\{->").unwrap();
 }
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Lang {
@@ -128,9 +133,16 @@ fn run() -> Result<()> {
     };
 
 
-    let rendered = TERA.render("test.tex", &def)
+    let mut rendered = TERA.render("test.tex", &def)
         .chain_err(|| "Failed to render the tex templates")?;
+    rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
     print!("{}", rendered);
+
+    let mut mdok = File::create("test_ok.tex")
+        .chain_err(|| "Falied to create markdown file")?;
+    mdok.write_fmt(format_args!("{}", rendered))
+        .chain_err(|| "Failed to write on markdown file")?;
+
     Ok(())
 }
 
