@@ -8,8 +8,21 @@
 
 \usepackage{polyglossia}%
 \usepackage{fontspec}%
-%\usepackage[space]{xeCJK}
+\usepackage[space]{xeCJK}
 \usepackage[Latin, Thai]{ucharclasses}
+
+% installed fonts: 
+% fandol and wadalab (cjk-fonts)
+% Linux Libertine OpenType
+% IPAex font OTF http://ipafont.ipa.go.jp/
+% tlwg fonts
+
+% thai word break research..
+% https://crates.io/crates/chamkho
+% https://linux.thai.net/projects/swath
+% http://userguide.icu-project.org/boundaryanalysis
+%  https://www-01.ibm.com/software/globalization/topics/thai/collation.html
+% some go-lang tools..
 
 
 \usepackage{xltxtra}
@@ -49,14 +62,14 @@
 \newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}
 %\newfontfamily{\cjkfont}{HAN NOM A}
 %\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
-%\newCJKfontfamily\japanfont{IPAex明朝}
+\newCJKfontfamily\japanesefont{IPAex明朝}
 %\newCJKfontfamily\koreafont{Baekmuk Batang}
 
 \setDefaultTransitions{\defaultfont}{}
 
 \setTransitionsForLatin{\latinfont}{}
 %\setTransitionsForCJK{\cjkfont}{}
-%\setTransitionsForJapanese{\japanesefont}{}
+\setTransitionsForJapanese{\japanesefont}{}
 %\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
 \setTransitionTo{Thai}{\thaifont}
 
@@ -70,22 +83,6 @@
 \begin{document}%
 
 
-
-\begin{enumerate}
-	\item A
-	\item B	
-	\begin{enumerate}
-		\item a
-		\item b	
-		\item c	
-        	\begin{enumerate}
-                \item a
-                \item b	
-                \item c	
-            \end{enumerate}
-	\end{enumerate}
-	\item C	
-\end{enumerate}
 
 \markdownInput{test.md}%
 
