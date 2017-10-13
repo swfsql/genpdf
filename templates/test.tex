@@ -8,14 +8,15 @@
 
 \usepackage{polyglossia}%
 \usepackage{fontspec}%
-\usepackage[space]{xeCJK}
+\usepackage[space,CJKnumber,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
 \usepackage[Latin, Thai]{ucharclasses}
 
 % installed fonts: 
 % fandol and wadalab (cjk-fonts)
 % Linux Libertine OpenType
 % IPAex font OTF http://ipafont.ipa.go.jp/
-% tlwg fonts
+% tlwg OTF fonts https://www.hawaii.edu/thai/thaifonts/ 
+%  ftp://linux.thai.net/pub/thailinux/software/fonts-tlwg/fonts/
 
 % thai word break research..
 % https://crates.io/crates/chamkho
@@ -24,13 +25,30 @@
 %  https://www-01.ibm.com/software/globalization/topics/thai/collation.html
 % some go-lang tools..
 
+% japanese lang could use vertical writing for mobile version
+%  https://ctan.org/pkg/ptex
+% also, could use a tool to make index
+%  https://ctan.org/pkg/mendex-doc
+% also, a gloss for polyglossia is here:
+%  http://jupiter.math.kyushu-u.ac.jp/~norio/XeTeX/work/gloss-japanese.ldf
+%  I pasted next to other gloss in my computer - didnt seem to work
+% look into https://ctan.org/pkg/luatexja later, maybe will do a japanese-only template
+%  and then publish optionally some vertical writings XD
+% more info
+%  https://tex.stackexchange.com/questions/110588/vertical-chinese-text-that-contains-characters-in-a-cjk-fallback-family-font
+%  https://www.preining.info/blog/2014/12/writing-japanese-in-latex-part-1-introduction/
+% https://gist.github.com/tgpfeiffer/5223851
+
 
 \usepackage{xltxtra}
 
 
 {% if def_lang.short == "jp"  %}
-\setCJKmainfont{MS Mincho} % for \rmfamily
-\setCJKsansfont{MS Gothic} % for \sffamily
+\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
+\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\XeTeXlinebreaklocale "ja"  %% Zeilenumbruch für japanische Texte
+\XeTeXlinebreakskip=0em plus 0.1em minus 0.01em
+\usepackage{setspace}
 {% elif def_lang.short == "zh" %}
 %\setCJKmainfont[
 %  BoldFont=WenQuanYi Zen Hei,
@@ -63,6 +81,7 @@
 %\newfontfamily{\cjkfont}{HAN NOM A}
 %\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
 \newCJKfontfamily\japanesefont{IPAex明朝}
+\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
 %\newCJKfontfamily\koreafont{Baekmuk Batang}
 
 \setDefaultTransitions{\defaultfont}{}
@@ -83,6 +102,22 @@
 \begin{document}%
 
 
+
+\begin{figure}[h!]
+\begin{center}
+\rotatebox{-90}{
+\begin{minipage}{0.35\textwidth}
+\CJKfamily{cjk-vert}
+\onehalfspacing% % needs to be repeated here (?!)
+きのう、ラースは　山本 を　あいました。 
+「こんにちは、山本さん。おげんき　ですか。」
+\end{minipage}
+}
+\end{center}
+\end{figure}
+
+
+\tableofcontents
 
 \markdownInput{test.md}%
 
