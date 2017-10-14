@@ -5,3 +5,5 @@ all_langs:
   - [en, english]
   - [jp, japan]
   - [th, thai]
+
+transifex_folder_path: "./../transifex" 

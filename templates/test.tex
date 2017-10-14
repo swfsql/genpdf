@@ -6,91 +6,27 @@
 
 \documentclass{article}%
 
-\usepackage{polyglossia}%
-\usepackage{fontspec}%
-\usepackage[space,CJKnumber,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
-\usepackage[Latin, Thai]{ucharclasses}
-
-% installed fonts: 
-% fandol and wadalab (cjk-fonts)
-% Linux Libertine OpenType
-% IPAex font OTF http://ipafont.ipa.go.jp/
-% tlwg OTF fonts https://www.hawaii.edu/thai/thaifonts/ 
-%  ftp://linux.thai.net/pub/thailinux/software/fonts-tlwg/fonts/
-
-% thai word break research..
-% https://crates.io/crates/chamkho
-% https://linux.thai.net/projects/swath
-% http://userguide.icu-project.org/boundaryanalysis
-%  https://www-01.ibm.com/software/globalization/topics/thai/collation.html
-% some go-lang tools..
-
-% japanese lang could use vertical writing for mobile version
-%  https://ctan.org/pkg/ptex
-% also, could use a tool to make index
-%  https://ctan.org/pkg/mendex-doc
-% also, a gloss for polyglossia is here:
-%  http://jupiter.math.kyushu-u.ac.jp/~norio/XeTeX/work/gloss-japanese.ldf
-%  I pasted next to other gloss in my computer - didnt seem to work
-% look into https://ctan.org/pkg/luatexja later, maybe will do a japanese-only template
-%  and then publish optionally some vertical writings XD
-% more info
-%  https://tex.stackexchange.com/questions/110588/vertical-chinese-text-that-contains-characters-in-a-cjk-fallback-family-font
-%  https://www.preining.info/blog/2014/12/writing-japanese-in-latex-part-1-introduction/
-% https://gist.github.com/tgpfeiffer/5223851
+{% include "lang_preamble.tex" %}
 
 
-\usepackage{xltxtra}
 
 
-{% if def_lang.short == "jp"  %}
-\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
-\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
-\XeTeXlinebreaklocale "ja"  %% Zeilenumbruch für japanische Texte
-\XeTeXlinebreakskip=0em plus 0.1em minus 0.01em
-\usepackage{setspace}
-{% elif def_lang.short == "zh" %}
-%\setCJKmainfont[
-%  BoldFont=WenQuanYi Zen Hei,
-%  ItalicFont=AR PL KaitiM GB]
-%  {AR PL SungtiL GB}
-%\setCJKsansfont{Noto Sans CJK SC}
-%\setCJKmonofont{cwTeXFangSong}
-{% elif def_lang.short == "th" %}
-\setmainlanguage[numerals=thai]{thai}%
-{% else %}
-\setmainlanguage{->{{def_lang.long}}}%
-\XeTeXlinebreaklocale "th_TH"
-\XeTeXlinebreakskip = 0pt plus 1pt  
-{% endif %}
-\defaultfontfeatures{Ligatures=TeX}%
+% shortcuts
+\def \cls {\nopagebreak\hfill\textcolor{lightgray}{$\Box$}}
 
-{% for lang in other_langs %}
-    {% if lang.short == "jp"  %}
-    {% elif lang.short == "zh"  %}
-    {% elif lang.short == "ko"  %}
-    {% else %}
-\setotherlanguage{->{{lang.long}}}%
-    {% endif %}
-{% endfor %}
 
-\newfontfamily\defaultfont{Linux Libertine O}% Code2000
-\newfontfamily\latinfont{Linux Libertine O}%
-\newfontfamily\thaifont[Script=Thai]{Norasi}%
-\newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}
-%\newfontfamily{\cjkfont}{HAN NOM A}
-%\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
-\newCJKfontfamily\japanesefont{IPAex明朝}
-\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
-%\newCJKfontfamily\koreafont{Baekmuk Batang}
+\ifdefined\mobile
+  \input{\modelos/mobile.tex}
+\else
+  \documentclass[a4paper]{article}
+  \usepackage[17pt]{extsizes}
+  \usepackage[top=0.4in, bottom=0.9in, left=.4in, right=.4in]{geometry}
+  %\ifdefined\separarSecoes
+  	\input{\modelos/clearpagelivro.tex}
+  %\fi
+\fi
 
-\setDefaultTransitions{\defaultfont}{}
 
-\setTransitionsForLatin{\latinfont}{}
-%\setTransitionsForCJK{\cjkfont}{}
-\setTransitionsForJapanese{\japanesefont}{}
-%\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
-\setTransitionTo{Thai}{\thaifont}
 
 \usepackage{markdown}
 \markdownSetup{
@@ -103,34 +39,11 @@
 
 
 
-\begin{figure}[h!]
-\begin{center}
-\rotatebox{-90}{
-\begin{minipage}{0.35\textwidth}
-\CJKfamily{cjk-vert}
-\onehalfspacing% % needs to be repeated here (?!)
-きのう、ラースは　山本 を　あいました。 
-「こんにちは、山本さん。おげんき　ですか。」
-\end{minipage}
-}
-\end{center}
-\end{figure}
-
 
 \tableofcontents
 
 \markdownInput{test.md}%
 
-teste lalala
-
-ดาว
-
-teste lalala
-
-
-%\textbrazil{ação é português}%
-%\textenglish{this is english}%
-%\textthai{ดาวพุธมีหลุมอุกกาบาตจำนวนมากจนดูคล้ายดวงจันทร์}%
 \end{document}%
 
 
