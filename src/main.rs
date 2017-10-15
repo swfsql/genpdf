@@ -32,8 +32,12 @@ use regex::Regex;
 //use walkdir::WalkDir;
 //use log::Level;
 
+use std::collections::HashMap;
+use std::collections::HashSet;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 struct Info {
     language: String,
     fallback: Option<String>,
@@ -158,7 +162,7 @@ fn run() -> Result<()> {
 
     */
 
-    #[derive(Serialize, Deserialize, Debug, Clone)]
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
     struct DirInfo {
         dir: String,
         info: Info,
@@ -168,6 +172,7 @@ fn run() -> Result<()> {
     // first partitionate them into those that are not translated, and those who are
     // originals contains vectors for each language. For each one, theres a vector of original (non-translation) projects
     // translations contains vectors for each language. For each one, theres a vector of translation projects.
+    let dir_info_hold: Vec<DirInfo> = vec![];
     let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
         consts.all_langs.iter().filter_map(|lang_dir| {
             info!("Reading language directory: {}", lang_dir.short);
@@ -177,28 +182,28 @@ fn run() -> Result<()> {
                 warn!("Failed to open the contents of from_{} directory. Error: {}", lang_dir.short, e);
                 return None;
             }
-            let (oks, errs): (Vec<Result<DirInfo>>, Vec<Result<DirInfo>>) = dir.unwrap().into_iter()
-                .map(|proj_dir| {
-                    let proj_dir = proj_dir
-                        .map_err(|e| format!("Failed to open language directory {} due to {}", lang_dir.short, e))?
-                        .path();
-                    let proj_dir = proj_dir.display();
-                    let yml = File::open(format!("{}/info.yml", proj_dir))
-                        .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir, e))?;
-                    let info: Info = serde_yaml::from_reader(yml)
-                        .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir, e))?;
-                    let info_ver = Version::parse(&info.version)
-                        .map_err(|e| format!("Failed to parse the info version ({}). Error: {}", &info.version, e))?;
-                    if info_ver > min_ver {
-                        bail!(format!("Error: version of info yaml file is too low ({} < {})", &info_ver, min_ver));
-                    }
-                    
-                    Ok(DirInfo{
-                        dir: proj_dir.to_string(),
-                        info: info,
-                    })
-                })
-                .partition(|x: &Result<DirInfo>| x.is_ok());
+            let (oks, errs): (Vec<Result<DirInfo>>, Vec<Result<DirInfo>>) = dir.unwrap().into_iter().map(|proj_dir| {
+                let proj_dir = proj_dir
+                    .map_err(|e| format!("Failed to open language directory {} due to {}", lang_dir.short, e))?
+                    .path();
+                let proj_dir = proj_dir.display();
+                let yml = File::open(format!("{}/info.yml", proj_dir))
+                    .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir, e))?;
+                let info: Info = serde_yaml::from_reader(yml)
+                    .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir, e))?;
+                let info_ver = Version::parse(&info.version)
+                    .map_err(|e| format!("Failed to parse the info version ({}). Error: {}", &info.version, e))?;
+                if info_ver > min_ver {
+                    bail!(format!("Error: version of info yaml file is too low ({} < {})", &info_ver, min_ver));
+                }
+
+                let dir_info = DirInfo{
+                    dir: proj_dir.to_string(),
+                    info: info,
+                };
+
+                Ok(dir_info)
+            }).partition(|x: &Result<DirInfo>| x.is_ok());
             for e in errs {
                 warn!("project not read: {}", e.err().unwrap());
             }
@@ -223,7 +228,75 @@ fn run() -> Result<()> {
         lang.into_iter().partition(|p| p.info.transifex_other.is_some())
     }).unzip();
     // note: tsfx may be partial (no transifex_done), therefore it wont be listed in the other project.
+    // TODO: a 'preview' notice could be added to this file cover, since its not fully translated
+
+    let insert_into_hm = |(mut hm_s, mut hm_di): (HashMap<String, HashSet<String>>, HashMap<String, HashSet<DirInfo>>), lang: &Vec<DirInfo>| {
+        for dir_info in lang {
+            let di: &DirInfo = dir_info;
+            let itself: Option<String> = di.info.transifex_done.clone();
+            if let None = itself {
+                continue;
+            }
+            let ref itself = itself.unwrap();
+            if let Some(old) = hm_s.get(itself) {
+                panic!("Error: repeated originals_tsfx key value.\nThis: {:?}\nAnd this: {:?}\nYou should change the transifex_done.", 
+                    old, &dir_info.info);
+            }
+            let mut hs_di = HashSet::new();
+            hs_di.insert(di.clone());
+            hm_di.insert(itself.clone(), hs_di);
+            let mut hs_s = HashSet::new();
+            hs_s.insert(itself.clone());
+            hm_s.insert(itself.clone(), hs_s);
+        }
+        (hm_s, hm_di)
+    };
+
+    let mut tsfx_str: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut tsfx_dirinfo: HashMap<String, HashSet<DirInfo>> = HashMap::new();
+    let (mut tsfx_str, mut tsfx_dirinfo) = originals_tsfx.iter().chain(translations_tsfx.iter()).fold((tsfx_str, tsfx_dirinfo), insert_into_hm);
+
+    translations_tsfx.iter()
+        .fold(tsfx_str, |mut hm, lang| {
+        for dir_info in lang {
+            let di = dir_info;
+            let itself = di.info.transifex_done.clone();
+            let ref other = di.info.transifex_other.clone().unwrap();
+            if let None = itself {
+                continue;
+            }
+            let ref itself = itself.unwrap();
+            hm = mutually_add(hm, itself, other);
+        }
+        hm
+    });
     
+
+    fn mutually_add (mut hm: HashMap<String, HashSet<String>>, a: &str, b: &str) 
+        -> HashMap<String, HashSet<String>> {
+        let a_ref = hm.get(a).clone().unwrap().clone();
+        let b_ref = hm.get(b).clone().unwrap().clone();
+        let union: HashSet<String> = HashSet::new();
+        let union: HashSet<&String> = union.union(&a_ref).collect(); 
+        let union: HashSet<String> = union.into_iter().map(|x| x.clone()).collect();
+        let union: HashSet<&String> = union.union(&b_ref).collect(); 
+        let union: HashSet<String> = union.into_iter().map(|x| x.clone()).collect();
+        if a != b {
+            if let Some(a_set) = hm.get_mut(a) {
+                *a_set = union.clone();
+            }
+            if let Some(b_set) = hm.get_mut(b) {
+                *b_set = union.clone();
+            }
+            for e in &a_ref {
+                hm = mutually_add(hm, a, e);
+            }
+            for e in &b_ref {
+                hm = mutually_add(hm, b, e);
+            }
+        } 
+        hm
+    } 
     
 
 
