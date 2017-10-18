@@ -24,6 +24,8 @@ use errors::*;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use std::fs::read_dir;
+use std::path::Path;
 //use std::io::prelude::*;
 use tera::Tera;
 
@@ -176,7 +178,7 @@ fn run() -> Result<()> {
     let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
         consts.all_langs.iter().filter_map(|lang_dir| {
             info!("Reading language directory: {}", lang_dir.short);
-            let dir = fs::read_dir(format!("{}/from_{}", consts.transifex_folder_path, lang_dir.short));
+            let dir = fs::read_dir(format!("{}/from_{}/", consts.transifex_folder_path, lang_dir.short));
 
             if let Err(e) = dir {
                 warn!("Failed to open the contents of from_{} directory. Error: {}", lang_dir.short, e);
@@ -198,7 +200,7 @@ fn run() -> Result<()> {
                 }
 
                 let dir_info = DirInfo{
-                    dir: proj_dir.to_string(),
+                    dir: format!("{}", &proj_dir),
                     info: info,
                 };
 
@@ -230,7 +232,7 @@ fn run() -> Result<()> {
     // note: tsfx may be partial (no transifex_done), therefore it wont be listed in the other project.
     // TODO: a 'preview' notice could be added to this file cover, since its not fully translated
 
-    let insert_into_hm = |(mut hm_s, mut hm_di): (HashMap<String, HashSet<String>>, HashMap<String, HashSet<DirInfo>>), lang: &Vec<DirInfo>| {
+    let insert_into_hm = |(mut hm_s, mut hm_di): (HashMap<String, HashSet<String>>, HashMap<String, DirInfo>), lang: &Vec<DirInfo>| {
         for dir_info in lang {
             let di: &DirInfo = dir_info;
             let itself: Option<String> = di.info.transifex_done.clone();
@@ -242,9 +244,7 @@ fn run() -> Result<()> {
                 panic!("Error: repeated originals_tsfx key value.\nThis: {:?}\nAnd this: {:?}\nYou should change the transifex_done.", 
                     old, &dir_info.info);
             }
-            let mut hs_di = HashSet::new();
-            hs_di.insert(di.clone());
-            hm_di.insert(itself.clone(), hs_di);
+            hm_di.insert(itself.clone(), di.clone());
             let mut hs_s = HashSet::new();
             hs_s.insert(itself.clone());
             hm_s.insert(itself.clone(), hs_s);
@@ -253,10 +253,10 @@ fn run() -> Result<()> {
     };
 
     let mut tsfx_str: HashMap<String, HashSet<String>> = HashMap::new();
-    let mut tsfx_dirinfo: HashMap<String, HashSet<DirInfo>> = HashMap::new();
+    let mut tsfx_dirinfo: HashMap<String, DirInfo> = HashMap::new();
     let (mut tsfx_str, mut tsfx_dirinfo) = originals_tsfx.iter().chain(translations_tsfx.iter()).fold((tsfx_str, tsfx_dirinfo), insert_into_hm);
 
-    translations_tsfx.iter()
+    tsfx_str = translations_tsfx.iter()
         .fold(tsfx_str, |mut hm, lang| {
         for dir_info in lang {
             let di = dir_info;
@@ -297,6 +297,64 @@ fn run() -> Result<()> {
         } 
         hm
     } 
+
+    println!("\n{:?}\n", &tsfx_str);
+    println!("\n{:?}\n", &tsfx_dirinfo);
+
+    'outer: for (key, proj) in tsfx_dirinfo {
+        println!("Entrou para: key: {}; \nproj: {:?}\n", &key, &proj);
+        // clear
+        let path = format!("{}/tmp", proj.dir);
+        if Path::new(&path).exists() {
+            if let Err(e) = fs::remove_dir_all(&path) {
+                warn!("Failed to clear the contents of {}/tmp directory. Error: {}", proj.dir, e);
+                continue 'outer;
+            }
+        }
+        if let Err(e) = fs::create_dir_all(format!("{}/tmp/original", proj.dir)) {
+            warn!("Failed to create a new {}/tmp/original directory. Error: {}", proj.dir, e);
+            continue 'outer;
+        }
+        let dir = Path::new(&proj.dir);
+        let dirs = read_dir(&dir);
+        if let Err(e) = dirs {
+            warn!("Failed to start copying {} contents into the tmp directory. Error: {}", proj.dir, e);
+            continue 'outer;
+        }
+
+        // backup
+        for path in dirs.unwrap() {
+            if let Err(e) = path {
+                warn!("Failed to open a file. Error: {}", e);
+                continue 'outer;
+            }
+            let path = path.unwrap();
+            if path.path().ends_with("tmp") {
+                continue;
+            }
+            let dst = Path::new(&proj.dir).join("tmp/original/").join(path.path().file_name().unwrap());
+            let meta = path.metadata();
+            if let Err(e) = meta {
+                warn!("Failed to read {} metadata. Error: {}", path.path().display(), e);
+                continue 'outer;
+            }
+            if meta.unwrap().is_dir() {
+                if let Err(e) = fs::create_dir(&dst) {
+                    warn!("Failed to create a new {:?} directory. Error: {}", &dst, e);
+                    continue 'outer;
+                }
+            } else {
+                let orig = path.path();
+                if let Err(e) = fs::copy(&orig, &dst) {
+                    warn!("Failed to copy {:?} into {:?} folder. Error: {}", &orig, &dst, e);
+                    continue 'outer;
+                }
+            }
+        }
+
+
+    }
+    
     
 
 
