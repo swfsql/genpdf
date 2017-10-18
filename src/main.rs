@@ -301,6 +301,36 @@ fn run() -> Result<()> {
     println!("\n{:?}\n", &tsfx_str);
     println!("\n{:?}\n", &tsfx_dirinfo);
 
+
+    fn copy_files_except_tmp(from: &str, to: &str) -> Result<()> {
+        fs::create_dir_all(to)
+            .chain_err(|| format!("Failed to create a new {} directory.", to))?;
+
+        let dir = Path::new(from);
+        let dirs = read_dir(&dir)
+            .chain_err(|| format!("Failed to start copying {} contents into the tmp directory.", from))?;
+
+        for path in dirs {
+            let path = path
+                .chain_err(|| format!("Failed to open a file."))?;
+            if path.path().ends_with("tmp") {
+                continue;
+            }
+            let dst = Path::new(to).join(path.path().file_name().unwrap());
+            let meta = path.metadata()
+                .chain_err(|| format!("Failed to read {} metadata.", path.path().display()))?;
+            if meta.is_dir() {
+                fs::create_dir(&dst)
+                    .chain_err(|| format!("Failed to create a new {:?} directory.", &dst))?;
+            } else {
+                let orig = path.path();
+                fs::copy(&orig, &dst)
+                    .chain_err(|| format!("Failed to copy {:?} into {:?} folder.", &orig, &dst))?;
+            }
+        }
+        Ok(())
+    }
+
     'outer: for (key, proj) in tsfx_dirinfo {
         println!("Entrou para: key: {}; \nproj: {:?}\n", &key, &proj);
         // clear
@@ -311,47 +341,25 @@ fn run() -> Result<()> {
                 continue 'outer;
             }
         }
-        if let Err(e) = fs::create_dir_all(format!("{}/tmp/original", proj.dir)) {
-            warn!("Failed to create a new {}/tmp/original directory. Error: {}", proj.dir, e);
-            continue 'outer;
-        }
-        let dir = Path::new(&proj.dir);
-        let dirs = read_dir(&dir);
-        if let Err(e) = dirs {
-            warn!("Failed to start copying {} contents into the tmp directory. Error: {}", proj.dir, e);
+
+
+        if let Err(e) = copy_files_except_tmp(&proj.dir, &format!("{}/tmp/original", &proj.dir)) {
+            warn!("error: {}", e);
+            for e in e.iter().skip(1) {
+                info!("caused by: {}", e);
+            }
             continue 'outer;
         }
 
-        // backup
-        for path in dirs.unwrap() {
-            if let Err(e) = path {
-                warn!("Failed to open a file. Error: {}", e);
-                continue 'outer;
-            }
-            let path = path.unwrap();
-            if path.path().ends_with("tmp") {
-                continue;
-            }
-            let dst = Path::new(&proj.dir).join("tmp/original/").join(path.path().file_name().unwrap());
-            let meta = path.metadata();
-            if let Err(e) = meta {
-                warn!("Failed to read {} metadata. Error: {}", path.path().display(), e);
-                continue 'outer;
-            }
-            if meta.unwrap().is_dir() {
-                if let Err(e) = fs::create_dir(&dst) {
-                    warn!("Failed to create a new {:?} directory. Error: {}", &dst, e);
-                    continue 'outer;
+        for target in proj.info.targets {
+            if let Err(e) = copy_files_except_tmp(&format!("{}/tmp/original", &proj.dir), &format!("{}/tmp/{}", &proj.dir, target)) {
+                warn!("error: {}", e);
+                for e in e.iter().skip(1) {
+                    info!("caused by: {}", e);
                 }
-            } else {
-                let orig = path.path();
-                if let Err(e) = fs::copy(&orig, &dst) {
-                    warn!("Failed to copy {:?} into {:?} folder. Error: {}", &orig, &dst, e);
-                    continue 'outer;
-                }
+                continue 'outer;
             }
         }
-
 
     }
     
@@ -359,6 +367,7 @@ fn run() -> Result<()> {
 
 
 
+    info!("vai chegar..");
     bail!("chegou..");
     //Ok(())
 
