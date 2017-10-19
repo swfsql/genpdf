@@ -106,6 +106,8 @@ struct Defaults {
     def_lang: Lang,
     fall_lang: Option<Lang>,
     other_langs: Vec<Lang>,
+
+    other_translations: Option<Vec<Info>>,
 }
 
 fn run() -> Result<()> {
@@ -144,7 +146,6 @@ fn run() -> Result<()> {
     // TODO: test projects that are translations and are linked to their original language, but aren't finished.
     //   maybe: basically consider unfinished translations as finished and include the progress info accordingly.
 
-    let dir_info_hold: Vec<DirInfo> = vec![];
     let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
         consts.all_langs.iter().filter_map(|lang_dir| {
             info!("Reading language directory: {}", lang_dir.short);
@@ -219,9 +220,9 @@ fn run() -> Result<()> {
         (hm_s, hm_di)
     };
 
-    let mut tsfx_str: HashMap<String, HashSet<String>> = HashMap::new();
-    let mut tsfx_dirinfo: HashMap<String, DirInfo> = HashMap::new();
-    let (mut tsfx_str, mut tsfx_dirinfo) = originals_tsfx.iter().chain(translations_tsfx.iter()).fold((tsfx_str, tsfx_dirinfo), insert_into_hm);
+    let tsfx_str: HashMap<String, HashSet<String>> = HashMap::new();
+    let tsfx_dirinfo: HashMap<String, DirInfo> = HashMap::new();
+    let (mut tsfx_str, tsfx_dirinfo) = originals_tsfx.iter().chain(translations_tsfx.iter()).fold((tsfx_str, tsfx_dirinfo), insert_into_hm);
 
     tsfx_str = translations_tsfx.iter()
         .fold(tsfx_str, |mut hm, lang| {
@@ -265,8 +266,11 @@ fn run() -> Result<()> {
         hm
     } 
 
-    println!("\n{:?}\n", &tsfx_str);
-    println!("\n{:?}\n", &tsfx_dirinfo);
+    debug!("tsfx_str:\n{:?}\n", &tsfx_str);
+    debug!("tsfx_dirinfo:\n{:?}\n", &tsfx_dirinfo);
+
+    debug!("originals_local:\n{:?}\n", &originals_local);
+    debug!("translations_local:\n{:?}\n", &translations_local);
 
 
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<()> {
@@ -298,54 +302,25 @@ fn run() -> Result<()> {
         Ok(())
     }
 
-    'outer: for (key, proj) in tsfx_dirinfo {
+    'outer: for (key, proj) in &tsfx_dirinfo {
         info!("Working on project of key: {}; \nproj: {:?}\n", &key, &proj);
         // clear
         let path = format!("{}/tmp", proj.dir);
         if Path::new(&path).exists() {
-            if let Err(e) = fs::remove_dir_all(&path) {
-                warn!("Failed to clear the contents of {}/tmp directory. Error: {}", proj.dir, e);
-                continue 'outer;
-            }
+            fs::remove_dir_all(&path)
+                .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.dir, e))?;
         }
 
+        copy_files_except_tmp(&proj.dir, &format!("{}/tmp/original", &proj.dir))
+            .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.dir, e))?;
 
-        if let Err(e) = copy_files_except_tmp(&proj.dir, &format!("{}/tmp/original", &proj.dir)) {
-            warn!("error: {}", e);
-            for e in e.iter().skip(1) {
-                info!("caused by: {}", e);
-            }
-            continue 'outer;
-        }
-
-        for target in proj.info.targets {
-            if let Err(e) = copy_files_except_tmp(&format!("{}/tmp/original", &proj.dir), &format!("{}/tmp/{}", &proj.dir, target)) {
-                warn!("error: {}", e);
-                for e in e.iter().skip(1) {
-                    info!("caused by: {}", e);
-                }
-                continue 'outer;
-            }
-        }
-
-    }
-    
-    
-
-
-
-    info!("finishing..");
-    bail!("finished..");
-    //Ok(())
-
-    /*
-    let mut def = {
-        let all_langs = consts.all_langs;
+        // lang information
+        let all_langs = consts.all_langs.clone();
         let (def_lang, other_langs) : (Vec<Lang>, Vec<Lang>) =
-            all_langs.iter().cloned().partition(|lang| lang.short == info.language);
+            all_langs.iter().cloned().partition(|lang| lang.short == proj.info.language);
         let def_lang: Lang = def_lang.into_iter().next()
             .chain_err(|| "Failed to get the default language information from preset")?;
-        let (fall_lang, other_langs) = match info.fallback {
+        let (fall_lang, other_langs) = match proj.info.fallback {
             Some(ref fallback) => {
                 let (fall_lang, other_langs) : (Vec<Lang>, Vec<Lang>) = 
                 other_langs.into_iter().partition(|lang| &lang.short == fallback);
@@ -353,41 +328,49 @@ fn run() -> Result<()> {
             },
             None => (None, other_langs),
         };
-        Defaults {
-            info: info,
-            target: "".to_string(),
-            all_langs: all_langs,
-            def_lang: def_lang,
-            fall_lang: fall_lang,
-            other_langs: other_langs,
+
+        // other translations information
+        let other_translations = tsfx_str.get(&proj.info.transifex_done.clone().unwrap()).unwrap().iter()
+            .filter(|ref l| ***l != proj.info.transifex_done.clone().unwrap()) // filter itself out
+            .filter_map(|ref l| match tsfx_dirinfo.get(&l.to_string()) {
+                Some(dir_info) => Some(dir_info.info.clone()),
+                None => None,
+        }).collect::<Vec<Info>>();
+        let other_translations = if other_translations.iter().count() > 1 { Some(other_translations) } else { None };
+
+        for target in proj.info.targets.clone() {
+            copy_files_except_tmp(&format!("{}/tmp/original", &proj.dir), &format!("{}/tmp/{}", &proj.dir, target))
+                .map_err(|e| format!("Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.", 
+                    &proj.dir, &proj.dir, target, e))?;
+
+            let def = Defaults {
+                info: proj.info.clone(),
+                target: target.clone(),
+                //
+                all_langs: all_langs.clone(),
+                def_lang: def_lang.clone(),
+                fall_lang: fall_lang.clone(),
+                other_langs: other_langs.clone(),
+                //
+                other_translations: other_translations.clone(),
+            };
+
+            let mut rendered = TERA.render("main.tex", &def)
+                .chain_err(|| "Failed to render the tex templates")?;
+            rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
+            print!("{}", rendered);
+
+            let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.dir, target))
+                .chain_err(|| "Falied to create tex file")?;
+            mdok.write_fmt(format_args!("{}", rendered))
+                .chain_err(|| "Failed to write on tex file")?;
+
+            info!("TeX file written.");
         }
-    };
-
-    let base_path = format!("{}/from_{}", consts.transifex_folder_path, info.language);
-    for target in info.targets {
-        def.target = target.clone();
-
-        // create folder structure
-        let tmp_path = format!("{}/tmp/{}", base_path, def.target);
-        // create folders..
-        // copy everything from parent, except folder "output"
-
-        let mut rendered = TERA.render("test.tex", &def)
-            .chain_err(|| "Failed to render the tex templates")?;
-        rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
-        print!("{}", rendered);
-
-        let mut mdok = File::create("test_ok.tex")
-            .chain_err(|| "Falied to create markdown file")?;
-        mdok.write_fmt(format_args!("{}", rendered))
-            .chain_err(|| "Failed to write on markdown file")?;
-
     }
-
-
-
+    
+    info!("finished..");
     Ok(())
-    */
 }
 
 fn main() {
