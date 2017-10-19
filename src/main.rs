@@ -117,63 +117,33 @@ fn run() -> Result<()> {
         .chain_err(|| format!("Failed to parse the consts version ({})", &consts.min_ver))?;
 
 
-    // open cache
-    //  if none: find all folders and build cache
-
-    /*
-    hm () -> ();
-      "nome de cada pasta"
-      "link discussao de cada pasta" -> pode repetir?
-
-      como relacionar uma pasta com a outra?
-      cada uma ou é original (tem o tfx_new) ou é tradução (tem o tfx_old e talvez o tfx_new)
-
-
-        <tfx_done> -> <ref struct; hashmap[others done]>
-        digamos.. passei por um original; criado um novo. Daí passo por um other done1, fica:
-            <first> -> <ref struct; hashmap[second]>
-            <second> -> <ref struct; hashmap[first]>
-        digamos.. daí criei um novo, que veio do segundo:
-            <first> -> <ref struct; hashmap[second]>
-            <second> -> <ref struct; hashmap[first]>
-            <third> -> <ref struct; hashmap[second, first]> // na hora de adicionar o segundo, adiciona todos que ele tem.. recursivamente
-            // mas também adiciona ele mesmo em todos que ele adicionou
-            <second> -> <ref struct; hashmap[first, third]>
-            <first> -> <ref struct; hashmap[second, third]>
-
-      - não é tradução
-        : translation: false
-        - não usa o tfx
-        - usa o tfx
-          : tfx_other = None
-          : tfx_done = tfx_done -> chave importante -> do original
-
-      - é tradução
-        : translation: true
-
-        - não usa o tfx
-          : tfx_other = None 
-          : tfx_done = None 
-
-        - usa o tfx
-          : tfx_other = tfx_other -> chave importante -> do original relativo na outra língua
-          : tfx_done = tfx_done -> chave importante -> do novo na nova língua
-
-        sobre o original: listar outros done;
-        sobre outros done: listar o original relativo e outros done.
-
-    */
-
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
     struct DirInfo {
         dir: String,
         info: Info,
     };
 
-    // planning to relate different documents according to their transifex directory
-    // first partitionate them into those that are not translated, and those who are
-    // originals contains vectors for each language. For each one, theres a vector of original (non-translation) projects
-    // translations contains vectors for each language. For each one, theres a vector of translation projects.
+    // There are several 2D vectors, according to the language and then index. 
+    // First, there are the originals and the translations 2D vectors.
+    // Then each one is separated into the ones that uses transifex (_tsfx), and those who don't (_local).
+
+    // Then, regarding transifex, a relationship between the originals and translations is needed.
+    //   since a thai translation might have come from english, which might have come from japanese, the actual original text,
+    //   the relationship is not straightforward. Each text should point at the other two.
+    // So two hashmaps are built. On both of them, the key is the transifex 'done' url.
+    //   In the first hashmap the value is a copy of the Info structure itself
+    //   In the second hashmap the value is a vector of 'done' urls (other keys) - this is cheap to copy.
+    //   So for a given 'done' url key, we can access it's Info structure and also the related translation projects Info structures.
+
+    // Then for each project, the script will work on it's 'tmp' folder, so the original contents arent touched.
+    // They are actually copied into tmp/original/ folder, to make things simpler.
+    // Then inside tmp/ folder, a folder for each target is created, with the tmp/original/ contents.
+    // So each target may work on the files isolated from other projects and from other targets.
+
+    // TODO: also build the projects that are _local (not transifex related).
+    // TODO: test projects that are translations and are linked to their original language, but aren't finished.
+    //   maybe: basically consider unfinished translations as finished and include the progress info accordingly.
+
     let dir_info_hold: Vec<DirInfo> = vec![];
     let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
         consts.all_langs.iter().filter_map(|lang_dir| {
@@ -216,9 +186,6 @@ fn run() -> Result<()> {
                     .partition(|dir_info| !dir_info.info.translation))
             }
     }).unzip();
-
-    // each project will be accessible with its transifex url. With that, it will be possible to access
-    // alternative languages translations. to facilitate template usage, the information will get quite repetitive
 
     // further separate originals into those that have transifex urls and those that dont
     let (originals_tsfx, originals_local): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = originals.into_iter().map(|lang| {
@@ -332,7 +299,7 @@ fn run() -> Result<()> {
     }
 
     'outer: for (key, proj) in tsfx_dirinfo {
-        println!("Entrou para: key: {}; \nproj: {:?}\n", &key, &proj);
+        info!("Working on project of key: {}; \nproj: {:?}\n", &key, &proj);
         // clear
         let path = format!("{}/tmp", proj.dir);
         if Path::new(&path).exists() {
@@ -367,8 +334,8 @@ fn run() -> Result<()> {
 
 
 
-    info!("vai chegar..");
-    bail!("chegou..");
+    info!("finishing..");
+    bail!("finished..");
     //Ok(())
 
     /*
