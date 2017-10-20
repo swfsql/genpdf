@@ -1,7 +1,13 @@
+{% if def_lang.short == "jp"  %}
+\usepackage[japanese]{babel}
+{% else %}
 \usepackage{polyglossia}%
+{% endif %}
+
+
 \usepackage{fontspec}%
-\usepackage[space,CJKnumber,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
-\usepackage[CJK,Latin, Thai]{ucharclasses}% TODO: add CJK
+\usepackage[space,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
+\usepackage[Latin, Thai]{ucharclasses}% TODO: add CJK
 
 \usepackage{xltxtra}
 
@@ -33,16 +39,25 @@
 \setmainlanguage{->{{def_lang.long}}}%
 {% endif %}
 
+{% if def_lang.short == "jp"  %}
+{% elif def_lang.short == "zh" %}
+{% else %}
+    {% for lang in other_langs %}
+        {% if lang.short == "jp"  %}
+
+\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
+\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\setotherlanguage{->{{lang.long}}}%
+        {% elif lang.short == "zh"  %}
+        {% elif lang.short == "ko"  %}
+        {% else %}
+\setotherlanguage{->{{lang.long}}}%
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
 \defaultfontfeatures{Ligatures=TeX}%
 
-{% for lang in other_langs %}
-    {% if lang.short == "jp"  %}
-    {% elif lang.short == "zh"  %}
-    {% elif lang.short == "ko"  %}
-    {% else %}
-\setotherlanguage{->{{lang.long}}}%
-    {% endif %}
-{% endfor %}
 
 \newfontfamily\defaultfont{Linux Libertine O}% Code2000
 \newfontfamily\latinfont{Linux Libertine O}%
@@ -50,7 +65,7 @@
 \newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}
 %\newfontfamily{\cjkfont}{HAN NOM A}
 %\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
-\newCJKfontfamily\japanesefont{IPAex明朝}
+%\newCJKfontfamily\japanesefont{IPAex明朝}
 \setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
 %\newCJKfontfamily\koreafont{Baekmuk Batang}
 
@@ -58,6 +73,6 @@
 
 \setTransitionsForLatin{\latinfont}{}
 %\setTransitionsForCJK{\cjkfont}{}
-\setTransitionsForJapanese{\japanesefont}{}
+%\setTransitionsForJapanese{\japanesefont}{}
 %\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
 \setTransitionTo{Thai}{\thaifont}

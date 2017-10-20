@@ -37,6 +37,9 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use std::process::Command;
+//use std::ffi::OsStr;
+
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -358,7 +361,7 @@ fn run() -> Result<()> {
             let mut rendered = TERA.render("main.tex", &def)
                 .chain_err(|| "Failed to render the tex templates")?;
             rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
-            print!("{}", rendered);
+            debug!("{}", rendered);
 
             let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.dir, target))
                 .chain_err(|| "Falied to create tex file")?;
@@ -366,6 +369,37 @@ fn run() -> Result<()> {
                 .chain_err(|| "Failed to write on tex file")?;
 
             info!("TeX file written.");
+
+            let cdpath = fs::canonicalize(format!("{proj}/tmp/{tgt}", proj=&proj.dir, tgt=&target))
+                .chain_err(|| "Failed to canonicalize the working project directory.")?
+                .into_os_string().into_string()
+                .map_err(|e| format!("Invalid working directory string path. Error: {:?}", e))?;
+            //let cmd = format!("xelatex main_ok.tex -include-directory=\"{cd}\" -output-directory=\"{cd}\" -halt-on-error --shell-escape", 
+            //let cmd = format!("xelatex \"{cd}\\main_ok.tex\" -halt-on-error --shell-escape", 
+            //let cmd = format!("\"cd /d \"{cd}\" && xelatex main_ok.tex -halt-on-error --shell-escape\"", 
+            //let cmd = format!("cd ../transifex && ls");
+            let cmd = &format!("cd {cd} && xelatex main_ok.tex -halt-on-error --shell-escape",
+            //let cmd = OsStr::new(&cmd);
+                    cd=&cdpath.replace(" ", "^ ")[4..]);
+                    //cd=&proj.dir[2..]);
+            println!("Command:\n{:?}", &cmd);
+            //println!("Command:\n{}", &cmd);
+
+            //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
+
+            let output = Command::new("cmd")
+                .args(&["/C", cmd])
+                //.args(&["/C", cmd.to_str().unwrap()])
+                .output()
+                .expect("failed to execute XeLaTeX process.");
+            
+            if !output.status.success() {
+                error!("XeLaTeX failed.");
+                println!("status: {}", output.status);
+                println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+                println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+                ::std::process::exit(1);
+            }
         }
     }
     
