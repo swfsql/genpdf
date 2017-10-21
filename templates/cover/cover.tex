@@ -1,0 +1,180 @@
+
+well well
+
+
+{% for title in info.titles %}
+title: {{title}}
+index: {{loop.index}}
+len: {{info.titles | length}}
+{% endfor %}
+
+{% for author in info.authors %}
+author: {{author}}
+index: {{loop.index}}
+len: {{info.authors | length}}
+{% endfor %}
+
+{% for coll in info.collaborators %}
+collaborator: {{coll}}
+index: {{loop.index}}
+len: {{info.collaborators | length}}
+{% endfor %}
+
+{% for thx in info.thanks %}
+thanks: {{thx}}
+index: {{loop.index}}
+len: {{info.thanks | length}}
+{% endfor %}
+
+{% for translator in info.translators %}
+translator: {{translator}}
+index: {{loop.index}}
+len: {{info.translators | length}}
+{% endfor %}
+
+{% for reviwer in info.reviwers %}
+reviwer: {{reviwer}}
+index: {{loop.index}}
+len: {{info.reviwers | length}}
+{% endfor %}
+
+{% for tag in info.tags %}
+tag: {{tag}}
+index: {{loop.index}}
+len: {{info.tags | length}}
+{% endfor %}
+
+\clearpage
+
+
+{% if target == "mobile" %}
+   \def \tituloU {-.7173cm}
+{% elif target == "article" %}
+   \def \tituloU {-.021\paperheight}
+{% endif %}
+
+\noindent\begin{tikzpicture}[remember picture]
+
+  \begin{pgfonlayer}{front}
+  
+    \coordinate (titulo_c) at (0,0);
+
+
+{% if info.titles | length > 0  %}
+      \node [name=titulo_t,anchor=north,fill=white,text = black,align=center,opacity=0] 
+        at ($ (titulo_c) + (0,\tituloU) $) {
+    {% for title in info.titles %}
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc {{title}}}\endgroup
+        {% if loop.index != info.titles | length %}
+        \newline\\
+        {% endif %}
+    {% endfor %}
+      };
+      \coordinate [below=0.01\paperheight] (autor_c) at (titulo_t.south);
+{% else %}
+      \coordinate (titulo_t) at (titulo_c);
+      \coordinate [below=0.01\paperheight] (autor_c) at (titulo_t);
+{% endif %}
+
+{% if info.authors | length > 0  %}
+    \node [name=autor_t,anchor=north,fill=white,text = black,align=center,opacity=0] at (autor_c) {
+        \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ info.authors | join(sep=", ") }}.}}\end{varwidth}};
+    \coordinate [below=0.01\paperheight] (tradutor_c) at (autor_t.south);
+{% else %}
+      \coordinate (autor_t) at (autor_c);
+      \coordinate [below=0.01\paperheight] (tradutor_c) at (autor_t);
+{% endif %}
+
+
+{% if info.translators | length > 0  %}
+    \node [name=tradutor_t,anchor=north,fill=white,text = black,align=center,opacity=0] at (tradutor_c) {
+    \begin{varwidth}{->.98\textwidth}{Traduzido por \textsc{->{{ info.translators | join(sep=", ") }}.}}\end{varwidth}};
+    \coordinate [below=0.01\paperheight] (poster_c) at (tradutor_t.south);
+{% else %}
+      \coordinate (tradutor_t) at (tradutor_c);
+      \coordinate [below=0.01\paperheight] (poster_c) at (tradutor_t);
+{% endif %}
+
+\coordinate [below=0.07\paperheight] (branco_c) at (tradutor_t.south);
+
+
+  \end{pgfonlayer}
+\end{tikzpicture}
+
+\noindent\begin{tikzpicture}[remember picture,overlay]
+
+  \coordinate (nw) at (current page.north west);
+  \coordinate (nn) at (current page.north);
+
+    \noindent\begin{pgfonlayer}{bg}    % select the background layer
+      \noindent\node[inner sep=0, anchor=north west,name=capa] at (current page.north west) {
+        \ifdefined\mobile
+          %\noindent\ClipImage{\paperwidth}{\paperheight}{\capa}
+          %\noindent\includegraphics[min width=\paperwidth,min height=\paperheight,keepaspectratio]{\capa}
+        \else
+          %\noindent\includegraphics[width=\paperwidth,keepaspectratio]{\capa}
+        \fi
+      };
+            
+      \ifdefined\mobile\else
+        \fill [anchor=west, fill=white] (-11,.5) rectangle (current page.south east);
+      \fi
+    \end{pgfonlayer}
+
+
+
+  \begin{pgfonlayer}{front}    % select the background layer
+    \coordinate (zero) at (0,0);
+    \coordinate (titulo_c2) at ($ (titulo_t.north) + (zero) - (titulo_c) + (0,1) $);
+
+
+{% if info.titles | length > 0  %}
+    \node [name=titulo_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
+        at ($ (nn) + (0,\tituloU) $) {
+    {% for title in info.titles %}
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc {{title}}}\endgroup
+        {% if loop.index != info.titles | length %}
+        \newline\\
+        {% endif %}
+    {% endfor %}
+    };
+    \coordinate [below=0.01\paperheight] (autor_c2) at (titulo_t2.south);
+{% else %}
+      \coordinate (titulo_t2) at (titulo_c2);
+      \coordinate [below=0.01\paperheight] (autor_c2) at (titulo_t2);
+{% endif %}
+
+
+{% if info.authors | length > 0  %}
+    \node [name=autor_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
+    at (autor_c2) {
+    \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ info.authors | join(sep=", ") }}.}}\end{varwidth}};
+    \coordinate [below=0.01\paperheight] (tradutor_c2) at (autor_t2.south);
+{% else %}
+    \coordinate (autor_t2) at (autor_c2);
+    \coordinate [below=0.01\paperheight] (tradutor_c2) at (autor_t2);
+{% endif %}
+
+{% if info.translators | length > 0  %}
+    \node [name=tradutor_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
+    at (tradutor_c2) {
+    \begin{varwidth}{->.98\textwidth}{Traduzido por \textsc{->{{ info.translators | join(sep=", ") }}.}}\end{varwidth}};
+    \coordinate [below=0.01\paperheight] (poster_c2) at (tradutor_t2.south);
+{% else %}
+    \coordinate (tradutor_t2) at (tradutor_c2);
+    \coordinate [below=0.01\paperheight] (poster_c2) at (tradutor_t2);
+{% endif %}
+
+
+{% if info.titles | length > 0  %}
+{% for title in info.titles %}
+{% endfor %}
+{% else %}
+{% endif %}
+
+        
+  \end{pgfonlayer}
+\end{tikzpicture}
+
+
+\clearpage

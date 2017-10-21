@@ -6,24 +6,14 @@
 
 \documentclass{article}%
 
-{% include "lang_preamble.tex" %}
-
-
-
+{% include "preamble/lang.tex" %}
 
 % shortcuts
 \def \utfbox {\nopagebreak\hfill □}
 
-%\ifdefined\mobile
-%  \input{\modelos/mobile.tex}
-%\else
-%  \documentclass[a4paper]{article}
-%  \usepackage[17pt]{extsizes}
-%  \usepackage[top=0.4in, bottom=0.9in, left=.4in, right=.4in]{geometry}
-%  %\ifdefined\separarSecoes
-%  	\input{\modelos/clearpagelivro.tex}
-%  %\fi
-%\fi
+{% include "preamble/footnote.tex" %}
+
+{% include "preamble/cover.tex" %}
 
 
 \usepackage[footnotes,hybrid]{markdown}
@@ -31,7 +21,6 @@
 \markdownSetup{
 	rendererPrototypes={
     	link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
-    	%link = {lalalalala}
 	},
 	renderers = {
 		olItemWithNumber = {\item},
@@ -43,82 +32,18 @@
 \usepackage[hidelinks]{hyperref}
 
 
-
-%\newcommand{\hash}{\#}
-
 %\usepackage[protrusion=true,final]{microtype}
-
-
-\makeatletter
-\newcommand*{\myfnsymbolsingle}[1]{->%
-  \ensuremath{->%
-    \ifcase#1% 0
-    \or % 1
-      *%   
-    \or % 2
-      \dagger
-    \or % 3  
-      \ddagger
-    \or % 4   
-      \mathsection
-    \or % 5
-      \mathparagraph
-    \else % >= 6
-      \@ctrerr  
-    \fi
-  }%   
-}   
-\makeatother
-
-
-\newcommand*{\myfnsymbol}[1]{->%
-  \myfnsymbolsingle{\value{->#1}}%
-}
-\makeatletter
-\newcommand*{\greekfnsymbolsingle}[1]{->%
-  \ensuremath{->%
-  \ifcase#1\or\alpha\or\beta\or\gamma\or\delta\or\varepsilon
-    \or\zeta\or\eta\or\theta\or\iota\or\kappa\or\lambda
-    \or\mu\or\nu\or\xi\or o\or\pi\or\varrho\or\sigma
-    \or\tau\or\upsilon\or\phi\or\chi\or\psi\or\omega
-    \else\@ctrerr\fi
-  }%   
-}   
-\makeatother
-\newcommand*{\greekfnsymbol}[1]{->%
-  \greekfnsymbolsingle{\value{->#1}}%
-}
-
-\usepackage[flushmargin,multiple]{footmisc}
-\usepackage{bigfoot}
-\DeclareNewFootnote{default}
-\DeclareNewFootnote[para]{C}
-\DeclareNewFootnote[para]{B}[fnsymbol]
-\MakeSortedPerPage{footnoteB}
-\MakeSortedPerPage{footnoteC}
-\usepackage{alphalph}
-\newalphalph{\myfnsymbolmult}[mult]{\myfnsymbolsingle}{}
-\newalphalph{\greekfnsymbolmult}[mult]{\greekfnsymbolsingle}{}
-
-\renewcommand*{\thefootnoteB}{->%
-\myfnsymbolmult{\value{footnoteB}}%
-}
-\renewcommand*{\thefootnoteC}{->%
-\greekfnsymbolmult{\value{footnoteC}}%
-}
-\newcommand{\nota}[1]{\footnoteC{->#1}}
-\let\oldfootnote\footnote
-\renewcommand{\footnote}[1]{\oldfootnote{->#1\utfbox}}
 
 
 
 \begin{document}%
 
-
-
+{% include "cover/cover.tex" %}
 
 \tableofcontents
 
-\markdownInput{test.md}%
+{% for md in info.mds %}
+\markdownInput{->{{md}}}%
+{% endfor %}
 
 \end{document}

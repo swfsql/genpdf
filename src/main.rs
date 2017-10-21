@@ -55,6 +55,7 @@ struct Info {
     translators: Option<Vec<String>>,
     reviwers: Option<Vec<String>>,
     tags: Option<Vec<String>>,
+    mds: Vec<String>,
     // urls
     discussions: Option<Vec<Vec<String>>>,
     transifex_other: Option<String>,
@@ -306,15 +307,17 @@ fn run() -> Result<()> {
         Ok(())
     }
 
+    info!("Clearing every project tmp folder");
     'outer: for (key, proj) in &tsfx_dirinfo {
-        info!("Working on project of key: {}; \nproj: {:?}\n", &key, &proj);
-        // clear
         let path = format!("{}/tmp", proj.dir);
         if Path::new(&path).exists() {
             fs::remove_dir_all(&path)
                 .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.dir, e))?;
         }
+    }
 
+    'outer: for (key, proj) in &tsfx_dirinfo {
+        info!("Working on project of key: {}; \nproj: {:?}\n", &key, &proj);
         copy_files_except_tmp(&proj.dir, &format!("{}/tmp/original", &proj.dir))
             .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.dir, e))?;
 
