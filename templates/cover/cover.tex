@@ -1,57 +1,18 @@
-
-
+{% import "cover/macros.tex" as cover_macros %}
 
 {% if target == "mobile" %}
-   \def \tituloU {-.7173cm}
+   \def \titleU {-.7173cm}
 {% elif target == "article" %}
-   \def \tituloU {-.021\paperheight}
+   \def \titleU {-.151\paperheight}
+{% elif target == "book" %}
+   \def \titleU {-.151\paperheight}
 {% endif %}
 
+% Hidden text, so any 'real' text starts after the title, etc
 \noindent\begin{tikzpicture}[remember picture]
-
   \begin{pgfonlayer}{front}
-  
-    \coordinate (titulo_c) at (0,0);
-
-
-{% if info.titles | length > 0  %}
-      \node [name=titulo_t,anchor=north,fill=white,text = black,align=center,opacity=0] 
-        at ($ (titulo_c) + (0,\tituloU) $) {
-    {% for title in info.titles %}
-        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
-        {% if loop.index != info.titles | length %}
-        \newline\\
-        {% endif %}
-    {% endfor %}
-      };
-      \coordinate [below=0.01\paperheight] (autor_c) at (titulo_t.south);
-{% else %}
-      \coordinate (titulo_t) at (titulo_c);
-      \coordinate [below=0.01\paperheight] (autor_c) at (titulo_t);
-{% endif %}
-
-{% if info.authors | length > 0  %}
-    \node [name=autor_t,anchor=north,fill=white,text = black,align=center,opacity=0] at (autor_c) {
-        \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ info.authors | join(sep=", ") }}.}}\end{varwidth}};
-    \coordinate [below=0.01\paperheight] (tradutor_c) at (autor_t.south);
-{% else %}
-      \coordinate (autor_t) at (autor_c);
-      \coordinate [below=0.01\paperheight] (tradutor_c) at (autor_t);
-{% endif %}
-
-
-{% if info.translators | length > 0  %}
-    \node [name=tradutor_t,anchor=north,fill=white,text = black,align=center,opacity=0] at (tradutor_c) {
-    \begin{varwidth}{->.98\textwidth}{Traduzido por \textsc{->{{ info.translators | join(sep=", ") }}.}}\end{varwidth}};
-    \coordinate [below=0.01\paperheight] (poster_c) at (tradutor_t.south);
-{% else %}
-      \coordinate (tradutor_t) at (tradutor_c);
-      \coordinate [below=0.01\paperheight] (poster_c) at (tradutor_t);
-{% endif %}
-
-\coordinate [below=0.07\paperheight] (branco_c) at (tradutor_t.south);
-
-
+    \coordinate (title_c) at ($ (0,0) + (0,\titleU) $);
+    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="", info=info, txt_opacity=0.0, fill_opacity=0.0) }}
   \end{pgfonlayer}
 \end{tikzpicture}
 
@@ -60,6 +21,7 @@
   \coordinate (nw) at (current page.north west);
   \coordinate (nn) at (current page.north);
 
+    % Adds the background image
     \noindent\begin{pgfonlayer}{bg}    % select the background layer
       \noindent\node[inner sep=0, anchor=north west,name=capa] at (current page.north west) {
         \ifdefined\mobile
@@ -71,68 +33,19 @@
       };
             
       \ifdefined\mobile\else
-        \fill [anchor=west, fill=white] (-11,.5) rectangle (current page.south east);
+        %\fill [anchor=west, fill=white] (-11,.5) rectangle (current page.south east);
       \fi
     \end{pgfonlayer}
 
 
-
+  % Draws over the backgorund image. This is the same text as the previous one, but this is actually shown.
   \begin{pgfonlayer}{front}    % select the background layer
-    \coordinate (zero) at (0,0);
-    \coordinate (titulo_c2) at ($ (titulo_t.north) + (zero) - (titulo_c) + (0,1) $);
-
-
-{% if info.titles | length > 0  %}
-    \node [name=titulo_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
-        at ($ (nn) + (0,\tituloU) $) {
-    {% for title in info.titles %}
-        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
-        {% if loop.index != info.titles | length %}
-        \newline\\\vspace{1mm}\newline\\
-        {% endif %}
-    {% endfor %}
-    };
-    \coordinate [below=0.01\paperheight] (autor_c2) at (titulo_t2.south);
-{% else %}
-      \coordinate (titulo_t2) at (titulo_c2);
-      \coordinate [below=0.01\paperheight] (autor_c2) at (titulo_t2);
-{% endif %}
-
-
-{% if info.authors | length > 0  %}
-    \node [name=autor_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
-    at (autor_c2) {
-    \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ info.authors | join(sep=", ") }}.}}\end{varwidth}};
-    \coordinate [below=0.01\paperheight] (tradutor_c2) at (autor_t2.south);
-{% else %}
-    \coordinate (autor_t2) at (autor_c2);
-    \coordinate [below=0.01\paperheight] (tradutor_c2) at (autor_t2);
-{% endif %}
-
-{% if info.translators | length > 0  %}
-    \node [name=tradutor_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
-    at (tradutor_c2) {
-    \begin{varwidth}{->.98\textwidth}{Traduzido por \textsc{->{{ info.translators | join(sep=", ") }}.}}\end{varwidth}};
-    \coordinate [below=0.01\paperheight] (poster_c2) at (tradutor_t2.south);
-{% else %}
-    \coordinate (tradutor_t2) at (tradutor_c2);
-    \coordinate [below=0.01\paperheight] (poster_c2) at (tradutor_t2);
-{% endif %}
-
-
-{% if info.titles | length > 0  %}
-{% for title in info.titles %}
-{% endfor %}
-{% else %}
-{% endif %}
-
-        
+    \coordinate (title2_c) at ($ (nn) + (0,\titleU) $);
+    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="2", info=info, txt_opacity=1.0, fill_opacity=0.87) }}
   \end{pgfonlayer}
+
 \end{tikzpicture}
 
-
-
-well well
 
 
 

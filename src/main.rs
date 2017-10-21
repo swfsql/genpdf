@@ -58,11 +58,10 @@ struct Info {
     mds: Vec<String>,
     // urls
     discussions: Option<Vec<Vec<String>>>,
-    transifex_other: Option<String>,
-    transifex_done: Option<String>,
+    transifex: Transifex,
     original: Option<String>,
-    more_infos: Option<Vec<Vec<String>>>,
     tags_prefix: Option<String>,
+    more_infos: Option<Vec<Vec<String>>>,
     artists: Option<Vec<Vec<String>>>,
     // settings
     reset_footer_active: bool,
@@ -76,12 +75,20 @@ struct Info {
     version: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct Transifex {
+    other: Option<String>,
+    done: Option<String>,
+    fetch_info: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Consts {
     min_ver: String,
     all_langs: Vec<Lang>,
     transifex_folder_path: String,
     passages: u8,
+    cover_nodes: Vec<String>,
 }
 
 lazy_static! {
@@ -92,7 +99,7 @@ lazy_static! {
         tera
     };
     pub static ref RE_FORWARD_ARROW: Regex = 
-        Regex::new("\\{->").unwrap();
+        Regex::new("\\{->|\\{-&gt;").unwrap();
 }
 
 
@@ -113,6 +120,8 @@ struct Defaults {
     other_langs: Vec<Lang>,
 
     other_translations: Option<Vec<Info>>,
+
+    consts: Consts,
 }
 
 fn run() -> Result<()> {
@@ -195,12 +204,12 @@ fn run() -> Result<()> {
 
     // further separate originals into those that have transifex urls and those that dont
     let (originals_tsfx, originals_local): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = originals.into_iter().map(|lang| {
-        lang.into_iter().partition(|p| p.info.transifex_done.is_some())
+        lang.into_iter().partition(|p| p.info.transifex.done.is_some())
     }).unzip();
     
     // to the same for translations
     let (translations_tsfx, translations_local): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = translations.into_iter().map(|lang| {
-        lang.into_iter().partition(|p| p.info.transifex_other.is_some())
+        lang.into_iter().partition(|p| p.info.transifex.other.is_some())
     }).unzip();
     // note: tsfx may be partial (no transifex_done), therefore it wont be listed in the other project.
     // TODO: a 'preview' notice could be added to this file cover, since its not fully translated
@@ -208,7 +217,7 @@ fn run() -> Result<()> {
     let insert_into_hm = |(mut hm_s, mut hm_di): (HashMap<String, HashSet<String>>, HashMap<String, DirInfo>), lang: &Vec<DirInfo>| {
         for dir_info in lang {
             let di: &DirInfo = dir_info;
-            let itself: Option<String> = di.info.transifex_done.clone();
+            let itself: Option<String> = di.info.transifex.done.clone();
             if let None = itself {
                 continue;
             }
@@ -233,8 +242,8 @@ fn run() -> Result<()> {
         .fold(tsfx_str, |mut hm, lang| {
         for dir_info in lang {
             let di = dir_info;
-            let itself = di.info.transifex_done.clone();
-            let ref other = di.info.transifex_other.clone().unwrap();
+            let itself = di.info.transifex.done.clone();
+            let ref other = di.info.transifex.other.clone().unwrap();
             if let None = itself {
                 continue;
             }
@@ -308,7 +317,7 @@ fn run() -> Result<()> {
     }
 
     info!("Clearing every project tmp folder");
-    'outer: for (key, proj) in &tsfx_dirinfo {
+    for (_, proj) in &tsfx_dirinfo {
         let path = format!("{}/tmp", proj.dir);
         if Path::new(&path).exists() {
             fs::remove_dir_all(&path)
@@ -337,8 +346,8 @@ fn run() -> Result<()> {
         };
 
         // other translations information
-        let other_translations = tsfx_str.get(&proj.info.transifex_done.clone().unwrap()).unwrap().iter()
-            .filter(|ref l| ***l != proj.info.transifex_done.clone().unwrap()) // filter itself out
+        let other_translations = tsfx_str.get(&proj.info.transifex.done.clone().unwrap()).unwrap().iter()
+            .filter(|ref l| ***l != proj.info.transifex.done.clone().unwrap()) // filter itself out
             .filter_map(|ref l| match tsfx_dirinfo.get(&l.to_string()) {
                 Some(dir_info) => Some(dir_info.info.clone()),
                 None => None,
@@ -360,6 +369,8 @@ fn run() -> Result<()> {
                 other_langs: other_langs.clone(),
                 //
                 other_translations: other_translations.clone(),
+                //
+                consts: consts.clone(),
             };
 
             // if def.info.language != "br" {

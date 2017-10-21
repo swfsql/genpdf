@@ -1,0 +1,49 @@
+{% macro titles(titles) %}
+    {% for title in titles %}
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
+        {% if loop.index != titles | length %}
+            \newline\\\vspace{1mm}\newline\\
+        {% endif %}
+    {% endfor %}
+{% endmacro titles %}
+
+{% macro authors(authors) %}
+    \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ authors | join(sep=" \&~") }}.}}\end{varwidth};
+{% endmacro authors %}
+
+
+{% macro nodes(nodes, suffix, info, txt_opacity, fill_opacity) %}
+    {% for i in range(start=1,end=3) %}
+        {% set sfx = suffix %}
+        {% if i == 1 %}
+            {% set bd = self::titles(titles=info.titles) %}
+            {% set con = info.titles | length > 0  %}
+            {% set act = nodes.1 %}
+            {% set nex = nodes.2 %}
+        {% elif i == 2 %}
+            {% set bd = self::authors(authors=info.authors) %}
+            {% set con = info.authors | length > 0  %}
+            {% set act = nodes.2 %}
+            {% set nex = nodes.3 %}
+        {% elif i == 3 %}
+            {% set bd = self::translators(translators=info.translators) %}
+            {% set con = info.translators | length > 0  %}
+            {% set act = nodes.3 %}
+            {% set nex = nodes.4 %}
+        {% endif %}
+        {{ self::node(actual=act, next=nex, suffix=sfx, cond=con, body=bd, txt_opacity=txt_opacity, fill_opacity=fill_opacity) }}
+    {% endfor %}
+{% endmacro nodes %}
+
+{% macro node(actual, next, suffix, cond, body, txt_opacity, fill_opacity) %}
+    {% if cond  %}
+        \node [name={{actual}}{{suffix}}_t,anchor=north,fill=white,text=black,align=center,fill opacity={{fill_opacity}},text opacity={{txt_opacity}}]
+        at ({{actual}}{{suffix}}_c) {
+            {{body | safe}}
+        };
+        \coordinate [below=0.01\paperheight] ({{next}}{{suffix}}_c) at ({{actual}}{{suffix}}_t.south);
+    {% else %}
+        \coordinate ({{actual}}{{suffix}}_t) at ({{actual}}{{suffix}}_c);
+        \coordinate [below=0.01\paperheight] ({{next}}{{suffix}}_c) at ({{actual}}{{suffix}}_t);
+    {% endif %}
+{% endmacro node %}

@@ -7,5 +7,6 @@ all_langs:
   - [th, thai]
 
 transifex_folder_path: "./../transifex" 
-passages: 3
+passages: 2
+cover_nodes: [page, title, author, translator, dummy]
 
