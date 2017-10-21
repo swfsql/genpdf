@@ -1,50 +1,4 @@
 
-well well
-
-
-{% for title in info.titles %}
-title: {{title}}
-index: {{loop.index}}
-len: {{info.titles | length}}
-{% endfor %}
-
-{% for author in info.authors %}
-author: {{author}}
-index: {{loop.index}}
-len: {{info.authors | length}}
-{% endfor %}
-
-{% for coll in info.collaborators %}
-collaborator: {{coll}}
-index: {{loop.index}}
-len: {{info.collaborators | length}}
-{% endfor %}
-
-{% for thx in info.thanks %}
-thanks: {{thx}}
-index: {{loop.index}}
-len: {{info.thanks | length}}
-{% endfor %}
-
-{% for translator in info.translators %}
-translator: {{translator}}
-index: {{loop.index}}
-len: {{info.translators | length}}
-{% endfor %}
-
-{% for reviwer in info.reviwers %}
-reviwer: {{reviwer}}
-index: {{loop.index}}
-len: {{info.reviwers | length}}
-{% endfor %}
-
-{% for tag in info.tags %}
-tag: {{tag}}
-index: {{loop.index}}
-len: {{info.tags | length}}
-{% endfor %}
-
-\clearpage
 
 
 {% if target == "mobile" %}
@@ -64,7 +18,7 @@ len: {{info.tags | length}}
       \node [name=titulo_t,anchor=north,fill=white,text = black,align=center,opacity=0] 
         at ($ (titulo_c) + (0,\tituloU) $) {
     {% for title in info.titles %}
-        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc {{title}}}\endgroup
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
         {% if loop.index != info.titles | length %}
         \newline\\
         {% endif %}
@@ -132,9 +86,9 @@ len: {{info.tags | length}}
     \node [name=titulo_t2,anchor=north,fill=white,text = black,align=center,fill opacity=0.87,text opacity=1] 
         at ($ (nn) + (0,\tituloU) $) {
     {% for title in info.titles %}
-        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc {{title}}}\endgroup
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
         {% if loop.index != info.titles | length %}
-        \newline\\
+        \newline\\\vspace{1mm}\newline\\
         {% endif %}
     {% endfor %}
     };
@@ -176,5 +130,35 @@ len: {{info.tags | length}}
   \end{pgfonlayer}
 \end{tikzpicture}
 
+
+
+well well
+
+
+
+{% for coll in info.collaborators %}
+collaborator: {{coll}}
+index: {{loop.index}}
+len: {{info.collaborators | length}}
+{% endfor %}
+
+{% for thx in info.thanks %}
+thanks: {{thx}}
+index: {{loop.index}}
+len: {{info.thanks | length}}
+{% endfor %}
+
+
+{% for reviwer in info.reviwers %}
+reviwer: {{reviwer}}
+index: {{loop.index}}
+len: {{info.reviwers | length}}
+{% endfor %}
+
+{% for tag in info.tags %}
+tag: {{tag}}
+index: {{loop.index}}
+len: {{info.tags | length}}
+{% endfor %}
 
 \clearpage
