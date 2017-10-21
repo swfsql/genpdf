@@ -7,3 +7,5 @@ all_langs:
   - [th, thai]
 
 transifex_folder_path: "./../transifex" 
+passages: 3
+

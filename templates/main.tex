@@ -12,9 +12,7 @@
 
 
 % shortcuts
-%\def \clearpagebox {\nopagebreak\hfill\textcolor{lightgray}{->$\Box$}}
-\def \clearpagebox {\nopagebreak\hfill □}
-%\def \clearpagebox {clearpagebox}
+\def \utfbox {\nopagebreak\hfill □}
 
 %\ifdefined\mobile
 %  \input{\modelos/mobile.tex}
@@ -31,10 +29,10 @@
 \usepackage[footnotes,hybrid]{markdown}
 %\usepackage[hybrid]{markdown}
 \markdownSetup{
-	%rendererPrototypes={
-    %	%link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
-    %	link = {lalalalala}
-	%},
+	rendererPrototypes={
+    	link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+    	%link = {lalalalala}
+	},
 	renderers = {
 		olItemWithNumber = {\item},
 	}
@@ -52,8 +50,8 @@
 
 
 \makeatletter
-\newcommand*{\myfnsymbolsingle}[1]{
-  \ensuremath{
+\newcommand*{\myfnsymbolsingle}[1]{->%
+  \ensuremath{->%
     \ifcase#1% 0
     \or % 1
       *%   
@@ -73,12 +71,12 @@
 \makeatother
 
 
-\newcommand*{\myfnsymbol}[1]{
+\newcommand*{\myfnsymbol}[1]{->%
   \myfnsymbolsingle{\value{->#1}}%
 }
 \makeatletter
-\newcommand*{\greekfnsymbolsingle}[1]{
-  \ensuremath{
+\newcommand*{\greekfnsymbolsingle}[1]{->%
+  \ensuremath{->%
   \ifcase#1\or\alpha\or\beta\or\gamma\or\delta\or\varepsilon
     \or\zeta\or\eta\or\theta\or\iota\or\kappa\or\lambda
     \or\mu\or\nu\or\xi\or o\or\pi\or\varrho\or\sigma
@@ -87,7 +85,7 @@
   }%   
 }   
 \makeatother
-\newcommand*{\greekfnsymbol}[1]{
+\newcommand*{\greekfnsymbol}[1]{->%
   \greekfnsymbolsingle{\value{->#1}}%
 }
 
@@ -102,15 +100,15 @@
 \newalphalph{\myfnsymbolmult}[mult]{\myfnsymbolsingle}{}
 \newalphalph{\greekfnsymbolmult}[mult]{\greekfnsymbolsingle}{}
 
-\renewcommand*{\thefootnoteB}{
+\renewcommand*{\thefootnoteB}{->%
 \myfnsymbolmult{\value{footnoteB}}%
 }
-\renewcommand*{\thefootnoteC}{
+\renewcommand*{\thefootnoteC}{->%
 \greekfnsymbolmult{\value{footnoteC}}%
 }
 \newcommand{\nota}[1]{\footnoteC{->#1}}
 \let\oldfootnote\footnote
-\renewcommand{\footnote}[1]{\oldfootnote{->#1\clearpagebox}}
+\renewcommand{\footnote}[1]{\oldfootnote{->#1\utfbox}}
 
 
 

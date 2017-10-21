@@ -80,6 +80,7 @@ struct Consts {
     min_ver: String,
     all_langs: Vec<Lang>,
     transifex_folder_path: String,
+    passages: u8,
 }
 
 lazy_static! {
@@ -358,9 +359,9 @@ fn run() -> Result<()> {
                 other_translations: other_translations.clone(),
             };
 
-            if def.info.language != "br" {
-                continue;
-            }
+            // if def.info.language != "br" {
+            //     continue;
+            // }
 
             let mut rendered = TERA.render("main.tex", &def)
                 .chain_err(|| "Failed to render the tex templates")?;
@@ -391,19 +392,23 @@ fn run() -> Result<()> {
 
             //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
 
-            let output = Command::new("cmd")
-                .args(&["/C", cmd])
-                //.args(&["/C", cmd.to_str().unwrap()])
-                .output()
-                .expect("failed to execute XeLaTeX process.");
-            
-            if !output.status.success() {
-                error!("XeLaTeX failed.");
-                println!("status: {}", output.status);
-                println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-                println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-                ::std::process::exit(1);
+            for _ in 0..consts.passages {
+                let output = Command::new("cmd")
+                    .args(&["/C", cmd])
+                    //.args(&["/C", cmd.to_str().unwrap()])
+                    .output()
+                    .expect("failed to execute XeLaTeX process.");
+                
+                if !output.status.success() {
+                    error!("XeLaTeX failed.");
+                    println!("status: {}", output.status);
+                    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+                    println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+                    ::std::process::exit(1);
+                }
+
             }
+
         }
     }
     
