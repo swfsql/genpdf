@@ -21,6 +21,7 @@
 {% if def_lang.short == "jp"  %}
 \setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
 \setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\setCJKmonofont[Script=CJK]{MS Gothic}
 \XeTeXlinebreaklocale "ja"  %% Zeilenumbruch für japanische Texte
 \XeTeXlinebreakskip=0em plus 0.1em minus 0.01em
 \usepackage{setspace}
@@ -47,6 +48,7 @@
 
 \setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
 \setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\setCJKmonofont[Script=CJK]{MS Gothic}
 \setotherlanguage{->{{lang.long}}}%
         {% elif lang.short == "zh"  %}
         {% elif lang.short == "ko"  %}
@@ -66,7 +68,7 @@
 %\newfontfamily{\cjkfont}{HAN NOM A}
 %\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
 %\newCJKfontfamily\japanesefont{IPAex明朝}
-\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
+%\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
 %\newCJKfontfamily\koreafont{Baekmuk Batang}
 
 \setDefaultTransitions{\defaultfont}{}

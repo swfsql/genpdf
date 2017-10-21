@@ -358,6 +358,10 @@ fn run() -> Result<()> {
                 other_translations: other_translations.clone(),
             };
 
+            if def.info.language != "br" {
+                continue;
+            }
+
             let mut rendered = TERA.render("main.tex", &def)
                 .chain_err(|| "Failed to render the tex templates")?;
             rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
