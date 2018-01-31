@@ -12,7 +12,7 @@
 \noindent\begin{tikzpicture}[remember picture]
   \begin{pgfonlayer}{front}
     \coordinate (title_c) at ($ (0,0) + (0,\titleU) $);
-    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="", info=info, txt_opacity=0.0, fill_opacity=0.0) }}
+    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="", info=info, info2=info2, txt_opacity=0.0, fill_opacity=0.0) }}
   \end{pgfonlayer}
 \end{tikzpicture}
 
@@ -41,7 +41,7 @@
   % Draws over the backgorund image. This is the same text as the previous one, but this is actually shown.
   \begin{pgfonlayer}{front}    % select the background layer
     \coordinate (title2_c) at ($ (nn) + (0,\titleU) $);
-    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="2", info=info, txt_opacity=1.0, fill_opacity=0.87) }}
+    {{ cover_macros::nodes(nodes=consts.cover_nodes, suffix="2", info=info, info2=info2, txt_opacity=1.0, fill_opacity=0.87) }}
   \end{pgfonlayer}
 
 \end{tikzpicture}
@@ -49,23 +49,23 @@
 
 
 
-{% for coll in info.collaborators %}
+{% for coll in info2.collaborators %}
 collaborator: {{coll}}
 index: {{loop.index}}
-len: {{info.collaborators | length}}
+len: {{info2.collaborators | length}}
 {% endfor %}
 
-{% for thx in info.thanks %}
+{% for thx in info2.thanks %}
 thanks: {{thx}}
 index: {{loop.index}}
-len: {{info.thanks | length}}
+len: {{info2.thanks | length}}
 {% endfor %}
 
 
-{% for reviwer in info.reviwers %}
-reviwer: {{reviwer}}
+{% for reviewer in info2.reviewers %}
+reviwer: {{reviewer}}
 index: {{loop.index}}
-len: {{info.reviwers | length}}
+len: {{info2.reviewers | length}}
 {% endfor %}
 
 {% for tag in info.tags %}

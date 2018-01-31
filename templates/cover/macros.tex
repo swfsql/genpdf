@@ -12,7 +12,7 @@
 {% endmacro authors %}
 
 
-{% macro nodes(nodes, suffix, info, txt_opacity, fill_opacity) %}
+{% macro nodes(nodes, suffix, info, info2, txt_opacity, fill_opacity) %}
     {% for i in range(start=1,end=3) %}
         {% set sfx = suffix %}
         {% if i == 1 %}
@@ -21,13 +21,13 @@
             {% set act = nodes.1 %}
             {% set nex = nodes.2 %}
         {% elif i == 2 %}
-            {% set bd = self::authors(authors=info.authors) %}
-            {% set con = info.authors | length > 0  %}
+            {% set bd = self::authors(authors=info2.authors) %}
+            {% set con = info2.authors | length > 0  %}
             {% set act = nodes.2 %}
             {% set nex = nodes.3 %}
         {% elif i == 3 %}
-            {% set bd = self::translators(translators=info.translators) %}
-            {% set con = info.translators | length > 0  %}
+            {% set bd = self::translators(translators=info2.translators) %}
+            {% set con = info2.translators | length > 0  %}
             {% set act = nodes.3 %}
             {% set nex = nodes.4 %}
         {% endif %}

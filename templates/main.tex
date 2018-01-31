@@ -42,8 +42,8 @@
 
 \tableofcontents
 
-{% for md in info.mds %}
-\markdownInput{->{{md}}}%
+{% for md in info.content_files %}
+\markdownInput{->{{md.0}}}%
 {% endfor %}
 
 \end{document}

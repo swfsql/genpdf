@@ -14,7 +14,6 @@ extern crate semver;
 extern crate regex;
 //extern crate walkdir;
 
-
 mod errors {
     error_chain!{}
 }
@@ -26,6 +25,7 @@ use std::fs::File;
 use std::io::Write;
 use std::fs::read_dir;
 use std::path::Path;
+use std::path::PathBuf;
 //use std::io::prelude::*;
 use tera::Tera;
 
@@ -41,54 +41,81 @@ use std::process::Command;
 //use std::ffi::OsStr;
 
 
+type VS = Vec<String>;
+type OVS = Option<Vec<String>>;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-struct Info {
+struct InfoTranslation {
     language: String,
-    fallback: Option<String>,
-    translation: bool,
-    // cover
-    titles: Vec<String>,
-    authors: Option<Vec<String>>,
-    collaborators: Option<Vec<String>>,
-    thanks: Option<Vec<String>>,
-    translators: Option<Vec<String>>,
-    reviwers: Option<Vec<String>>,
-    tags: Option<Vec<String>>,
-    mds: Vec<String>,
-    // urls
-    discussions: Option<Vec<Vec<String>>>,
-    transifex: Transifex,
-    original: Option<String>,
-    tags_prefix: Option<String>,
-    more_infos: Option<Vec<Vec<String>>>,
-    artists: Option<Vec<Vec<String>>>,
-    // settings
+    is_translation: bool,
+    this_project_url: Option<String>,
+    fetch_translators: bool,
+    fetch_reviwers: bool,
+    fetch_progress: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct InfoPerson {
+    identifier: String,
+    rule: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct InfoResource {
+    rule: Option<String>,
+    content: Option<String>,
+    websites: OVS,
+    description: Option<String>,
+    persons: OVS,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct InfoTarget {
+    name: String,
     reset_footer_active: bool,
     reset_footer_depth: u8,
     clear_page_active: bool,
     clear_page_depth: u8,
-    toc_depth_book: u8,
-    toc_depth_article: u8,
-    toc_depth_mobile: u8,
-    targets: Vec<String>,
+    toc_depth: u8,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct Info {
+    content_files: Vec<VS>,
+    translation: InfoTranslation,
+    titles: VS,
+    discussions: Option<Vec<VS>>,
+    more_infos: Option<Vec<VS>>,
+    tags: OVS,
+    tag_prefix: Option<String>,
+    persons_id: Option<Vec<InfoPerson>>,
+    resources: Option<Vec<InfoResource>>,
+    targets: Vec<InfoTarget>,
     version: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-struct Transifex {
-    other: Option<String>,
-    done: Option<String>,
-    fetch_info: bool,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct InfoPerson2 {
+    name: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Info2 {
+    authors: Vec<InfoPerson2>,
+    translators: Vec<InfoPerson2>,
+    collaborators: Vec<InfoPerson2>,
+    thanks: Vec<InfoPerson2>,
+    reviewers: Vec<InfoPerson2>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Consts {
     min_ver: String,
-    all_langs: Vec<Lang>,
-    transifex_folder_path: String,
     passages: u8,
     cover_nodes: Vec<String>,
+    all_langs_from_dir: String,
+    all_langs_to_dir: String,
+    all_langs: Vec<Lang>,
 }
 
 lazy_static! {
@@ -99,27 +126,30 @@ lazy_static! {
         tera
     };
     pub static ref RE_FORWARD_ARROW: Regex = 
-        Regex::new("\\{->|\\{-&gt;").unwrap();
+        Regex::new("\\{->|\\{-&gt;").unwrap(); // some macros may output -> as {-&gt;
 }
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Lang {
-    short: String,
-    long: String,
+    from_active: bool,
+    to_active: bool,
+    to_dir_name: String, // pt-BR
+    set_lang: String, // brazil (xelatex)
+    title: String, // Portuguese (Brazilian)
+    from_url: Option<String>, // https://crowdin.com/project/ancap-ch/
+    from_dir_name: Option<String>, // from_en
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Defaults {
     info: Info,
+    info2: Info2,
     target: String,
 
     all_langs: Vec<Lang>,
     def_lang: Lang,
-    fall_lang: Option<Lang>,
     other_langs: Vec<Lang>,
-
-    other_translations: Option<Vec<Info>>,
 
     consts: Consts,
 }
@@ -135,9 +165,21 @@ fn run() -> Result<()> {
 
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
     struct DirInfo {
-        dir: String,
+        base_dir: String,
+        from_dir: String,
+        lang_dir: String,
+        proj_dir: String,
         info: Info,
     };
+
+    impl DirInfo {
+        fn fulldir(&self) -> PathBuf {
+            Path::new(&self.base_dir).join(&self.from_dir).join(&self.lang_dir).join(&self.proj_dir)
+        }
+        fn fulldir_str(&self) -> String {
+            format!("{}/{}/{}/{}", self.base_dir, self.from_dir, self.lang_dir, self.proj_dir)
+        }
+    }
 
     // There are several 2D vectors, according to the language and then index. 
     // First, there are the originals and the translations 2D vectors.
@@ -160,131 +202,132 @@ fn run() -> Result<()> {
     // TODO: test projects that are translations and are linked to their original language, but aren't finished.
     //   maybe: basically consider unfinished translations as finished and include the progress info accordingly.
 
-    let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
-        consts.all_langs.iter().filter_map(|lang_dir| {
-            info!("Reading language directory: {}", lang_dir.short);
-            let dir = fs::read_dir(format!("{}/from_{}/", consts.transifex_folder_path, lang_dir.short));
+    let active_to_langs = consts.all_langs.iter().fold(HashSet::new(), |mut hs, l| {
+        if l.to_active {
+            hs.insert(&l.to_dir_name);
+            hs
+        } else {
+            hs
+        }
+    });
+    println!("<{:?}>", active_to_langs);
 
-            if let Err(e) = dir {
-                warn!("Failed to open the contents of from_{} directory. Error: {}", lang_dir.short, e);
+
+    // let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = 
+    let dirs: Vec<DirInfo> = 
+        consts.all_langs.iter().filter_map(|lang| {
+            // println!("::lang\n{:?}", lang);
+            if !lang.from_active { 
+                return None; 
+            }
+
+            let from_dir_name = lang.from_dir_name.clone();
+            if let None = from_dir_name {
                 return None;
             }
-            let (oks, errs): (Vec<Result<DirInfo>>, Vec<Result<DirInfo>>) = dir.unwrap().into_iter().map(|proj_dir| {
-                let proj_dir = proj_dir
-                    .map_err(|e| format!("Failed to open language directory {} due to {}", lang_dir.short, e))?
-                    .path();
-                let proj_dir = proj_dir.display();
-                let yml = File::open(format!("{}/info.yml", proj_dir))
-                    .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir, e))?;
-                let info: Info = serde_yaml::from_reader(yml)
-                    .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir, e))?;
-                let info_ver = Version::parse(&info.version)
-                    .map_err(|e| format!("Failed to parse the info version ({}). Error: {}", &info.version, e))?;
-                if info_ver > min_ver {
-                    bail!(format!("Error: version of info yaml file is too low ({} < {})", &info_ver, min_ver));
-                }
+            let from_dir_name = from_dir_name.unwrap();
+            
 
-                let dir_info = DirInfo{
-                    dir: format!("{}", &proj_dir),
-                    info: info,
-                };
+            info!("Reading language directory: {}", lang.to_dir_name);
+            let dir = fs::read_dir(format!("{}/{}", &consts.all_langs_to_dir, &from_dir_name));
 
-                Ok(dir_info)
-            }).partition(|x: &Result<DirInfo>| x.is_ok());
-            for e in errs {
-                warn!("project not read: {}", e.err().unwrap());
+            println!("::dir\n{:?}... {:?}", dir, format!("{}/{}", consts.all_langs_to_dir, &from_dir_name));
+
+            if let Err(e) = dir {
+                warn!("Failed to open the contents of {}/{} directory. Error: {}", &from_dir_name, lang.to_dir_name, e);
+                return None;
             }
+            let oks: Vec<DirInfo> = dir.unwrap().into_iter().filter_map(|lang_dir| {
+
+                let lang_dir = lang_dir
+                    .map_err(|e| format!("Failed to open language directory {} due to {}", lang.to_dir_name, e));
+                if let Err(_) = lang_dir {
+                    return None;
+                }
+                let lang_dir = lang_dir.unwrap().path();
+                let lang_dir_name = lang_dir.file_name().unwrap().to_string_lossy().to_string();
+
+                if !active_to_langs.contains(&lang_dir_name) {
+                    return None;
+                }
+                
+
+                let proj_dirs = fs::read_dir(lang_dir);
+                let dir_infos = proj_dirs.unwrap().into_iter().filter_map(|proj_dir| {
+
+                    let proj_dir = proj_dir.unwrap().path();
+                    let proj_dir_name = proj_dir.file_name().unwrap().to_string_lossy().to_string();
+                    // println!("::{} ", proj_dir_name);
+                    let yml = File::open(proj_dir.join("info.yml"))
+                        .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir_name, e));
+                    if let Err(e) = yml {
+                        // println!(" >> yml err");
+                        return None;
+                    }
+                    let yml = yml.unwrap();
+                    let info = serde_yaml::from_reader(yml)
+                        .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir_name, e));
+                    if let Err(e) = info {
+                        // println!(" >> info err <{}>", e);
+                        return None;
+                    }
+                    let info: Info = info.unwrap();
+                    let info_ver = Version::parse(&info.version)
+                        .map_err(|e| format!("Failed to parse the info version ({}). Error: {}", &info.version, e));
+                    if let Err(_) = info_ver {
+                        // println!(" >> ver err");
+                        return None;
+                    }
+                    let info_ver = info_ver.unwrap();
+                    if info_ver > min_ver {
+                        // bail!(format!("Error: version of info yaml file is too low ({} < {})", &info_ver, min_ver));
+                        // println!(" >> min ver err");
+                        return None;
+                    }
+
+                    let dir_info = DirInfo{
+                        base_dir: format!("{}", &consts.all_langs_to_dir),
+                        from_dir: format!("{}", &from_dir_name),
+                        lang_dir: format!("{}", &lang_dir_name),
+                        proj_dir: format!("{}", &proj_dir_name),
+                        info: info,
+                    };
+
+                    return Some(dir_info);
+
+                }).collect::<Vec<_>>();
+
+                // println!("{:?}", dir_infos);
+
+
+                // TODO: also, for later on, also read the original english one (since from-en wont have a "to-en")
+
+                
+                // let dir = fs::read_dir(format!("{}/{}", consts.all_langs_to_dir, &from_dir_name));
+
+
+                Some(dir_infos)
+            }).fold(vec![], |mut vs, v| {
+                vs.extend(v);
+                vs
+            });
+            // for e in errs {
+            //     warn!("project not read: {}", e.err().unwrap());
+            // }
             if let None = oks.iter().next() {
                 None
             } else {
-                Some(oks.into_iter().collect::<Result<Vec<DirInfo>>>().unwrap().into_iter()
-                    .partition(|dir_info| !dir_info.info.translation))
+                Some(oks.into_iter().collect::<Vec<DirInfo>>()
+                    // .into_iter()
+                    // .partition(|dir_info| !dir_info.info.translation)
+                )
             }
-    }).unzip();
-
-    // further separate originals into those that have transifex urls and those that dont
-    let (originals_tsfx, originals_local): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = originals.into_iter().map(|lang| {
-        lang.into_iter().partition(|p| p.info.transifex.done.is_some())
-    }).unzip();
-    
-    // to the same for translations
-    let (translations_tsfx, translations_local): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) = translations.into_iter().map(|lang| {
-        lang.into_iter().partition(|p| p.info.transifex.other.is_some())
-    }).unzip();
-    // note: tsfx may be partial (no transifex_done), therefore it wont be listed in the other project.
-    // TODO: a 'preview' notice could be added to this file cover, since its not fully translated
-
-    let insert_into_hm = |(mut hm_s, mut hm_di): (HashMap<String, HashSet<String>>, HashMap<String, DirInfo>), lang: &Vec<DirInfo>| {
-        for dir_info in lang {
-            let di: &DirInfo = dir_info;
-            let itself: Option<String> = di.info.transifex.done.clone();
-            if let None = itself {
-                continue;
-            }
-            let ref itself = itself.unwrap();
-            if let Some(old) = hm_s.get(itself) {
-                panic!("Error: repeated originals_tsfx key value.\nThis: {:?}\nAnd this: {:?}\nYou should change the transifex_done.", 
-                    old, &dir_info.info);
-            }
-            hm_di.insert(itself.clone(), di.clone());
-            let mut hs_s = HashSet::new();
-            hs_s.insert(itself.clone());
-            hm_s.insert(itself.clone(), hs_s);
-        }
-        (hm_s, hm_di)
-    };
-
-    let tsfx_str: HashMap<String, HashSet<String>> = HashMap::new();
-    let tsfx_dirinfo: HashMap<String, DirInfo> = HashMap::new();
-    let (mut tsfx_str, tsfx_dirinfo) = originals_tsfx.iter().chain(translations_tsfx.iter()).fold((tsfx_str, tsfx_dirinfo), insert_into_hm);
-
-    tsfx_str = translations_tsfx.iter()
-        .fold(tsfx_str, |mut hm, lang| {
-        for dir_info in lang {
-            let di = dir_info;
-            let itself = di.info.transifex.done.clone();
-            let ref other = di.info.transifex.other.clone().unwrap();
-            if let None = itself {
-                continue;
-            }
-            let ref itself = itself.unwrap();
-            hm = mutually_add(hm, itself, other);
-        }
-        hm
+    }).fold(vec![], |mut vs, v| {
+        vs.extend(v);
+        vs
     });
-    
 
-    fn mutually_add (mut hm: HashMap<String, HashSet<String>>, a: &str, b: &str) 
-        -> HashMap<String, HashSet<String>> {
-        let a_ref = hm.get(a).clone().unwrap().clone();
-        let b_ref = hm.get(b).clone().unwrap().clone();
-        let union: HashSet<String> = HashSet::new();
-        let union: HashSet<&String> = union.union(&a_ref).collect(); 
-        let union: HashSet<String> = union.into_iter().map(|x| x.clone()).collect();
-        let union: HashSet<&String> = union.union(&b_ref).collect(); 
-        let union: HashSet<String> = union.into_iter().map(|x| x.clone()).collect();
-        if a != b {
-            if let Some(a_set) = hm.get_mut(a) {
-                *a_set = union.clone();
-            }
-            if let Some(b_set) = hm.get_mut(b) {
-                *b_set = union.clone();
-            }
-            for e in &a_ref {
-                hm = mutually_add(hm, a, e);
-            }
-            for e in &b_ref {
-                hm = mutually_add(hm, b, e);
-            }
-        } 
-        hm
-    } 
-
-    debug!("tsfx_str:\n{:?}\n", &tsfx_str);
-    debug!("tsfx_dirinfo:\n{:?}\n", &tsfx_dirinfo);
-
-    debug!("originals_local:\n{:?}\n", &originals_local);
-    debug!("translations_local:\n{:?}\n", &translations_local);
+    println!("\n\n\n{:?}\n\n\n", dirs);
 
 
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<()> {
@@ -317,58 +360,54 @@ fn run() -> Result<()> {
     }
 
     info!("Clearing every project tmp folder");
-    for (_, proj) in &tsfx_dirinfo {
-        let path = format!("{}/tmp", proj.dir);
+    for proj in &dirs {
+        let path = proj.fulldir().join("tmp");
+        // let path = format!("{}/tmp", proj.fulldir());
         if Path::new(&path).exists() {
             fs::remove_dir_all(&path)
-                .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.dir, e))?;
+                .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
         }
     }
 
-    'outer: for (key, proj) in &tsfx_dirinfo {
-        info!("Working on project of key: {}; \nproj: {:?}\n", &key, &proj);
-        copy_files_except_tmp(&proj.dir, &format!("{}/tmp/original", &proj.dir))
-            .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.dir, e))?;
+    // bail!("MORREU MAS PASSA BEM...");
+
+    // TODO: a structure that groups some information for the same project for different languages
+
+    'outer: for proj in &dirs {
+        info!("Working on project: {:?}\n", &proj);
+        copy_files_except_tmp(&proj.fulldir_str(), &format!("{}/tmp/original", &proj.fulldir_str()))
+            .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.fulldir_str(), e))?;
 
         // lang information
         let all_langs = consts.all_langs.clone();
         let (def_lang, other_langs) : (Vec<Lang>, Vec<Lang>) =
-            all_langs.iter().cloned().partition(|lang| lang.short == proj.info.language);
+            all_langs.iter().cloned().partition(|lang| lang.to_dir_name == proj.info.translation.language);
         let def_lang: Lang = def_lang.into_iter().next()
             .chain_err(|| "Failed to get the default language information from preset")?;
-        let (fall_lang, other_langs) = match proj.info.fallback {
-            Some(ref fallback) => {
-                let (fall_lang, other_langs) : (Vec<Lang>, Vec<Lang>) = 
-                other_langs.into_iter().partition(|lang| &lang.short == fallback);
-                (fall_lang.first().cloned(), other_langs)
-            },
-            None => (None, other_langs),
-        };
 
-        // other translations information
-        let other_translations = tsfx_str.get(&proj.info.transifex.done.clone().unwrap()).unwrap().iter()
-            .filter(|ref l| ***l != proj.info.transifex.done.clone().unwrap()) // filter itself out
-            .filter_map(|ref l| match tsfx_dirinfo.get(&l.to_string()) {
-                Some(dir_info) => Some(dir_info.info.clone()),
-                None => None,
-        }).collect::<Vec<Info>>();
-        let other_translations = if other_translations.iter().count() > 1 { Some(other_translations) } else { None };
+        // TODO: other translations information
 
         for target in proj.info.targets.clone() {
-            copy_files_except_tmp(&format!("{}/tmp/original", &proj.dir), &format!("{}/tmp/{}", &proj.dir, target))
+            copy_files_except_tmp(&format!("{}/tmp/original", &proj.fulldir_str()), &format!("{}/tmp/{}", &proj.fulldir_str(), target.name))
                 .map_err(|e| format!("Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.", 
-                    &proj.dir, &proj.dir, target, e))?;
+                    &proj.fulldir_str(), &proj.fulldir_str(), target.name, e))?;
 
+            // let authors = proj.info.persons_id.iter().
+            let info2 = Info2 {
+                authors: vec![],
+                translators: vec![],
+                collaborators: vec![],
+                thanks: vec![],
+                reviewers: vec![],
+            };
             let def = Defaults {
                 info: proj.info.clone(),
-                target: target.clone(),
+                info2: info2.clone(),
+                target: target.name.clone(),
                 //
                 all_langs: all_langs.clone(),
                 def_lang: def_lang.clone(),
-                fall_lang: fall_lang.clone(),
                 other_langs: other_langs.clone(),
-                //
-                other_translations: other_translations.clone(),
                 //
                 consts: consts.clone(),
             };
@@ -382,14 +421,14 @@ fn run() -> Result<()> {
             rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
             debug!("{}", rendered);
 
-            let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.dir, target))
+            let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.fulldir_str(), target.name))
                 .chain_err(|| "Falied to create tex file")?;
             mdok.write_fmt(format_args!("{}", rendered))
                 .chain_err(|| "Failed to write on tex file")?;
 
             info!("TeX file written.");
 
-            let cdpath = fs::canonicalize(format!("{proj}/tmp/{tgt}", proj=&proj.dir, tgt=&target))
+            let cdpath = fs::canonicalize(format!("{proj}/tmp/{tgt}", proj=&proj.fulldir_str(), tgt=&target.name))
                 .chain_err(|| "Failed to canonicalize the working project directory.")?
                 .into_os_string().into_string()
                 .map_err(|e| format!("Invalid working directory string path. Error: {:?}", e))?;

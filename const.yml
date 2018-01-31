@@ -1,12 +1,46 @@
-min_ver: "0.1.0"
+min_ver: "0.1.2"
 
-all_langs:
-  - [br, brazil]
-  - [en, english]
-  - [jp, japan]
-  - [th, thai]
-
-transifex_folder_path: "./../transifex" 
 passages: 2
 cover_nodes: [page, title, author, translator, dummy]
 
+all_langs_from_dir: "./../crowdin"
+all_langs_to_dir: "./../crowdin_l10n_master"
+
+# activated (from), activated (to), folder name (to), crowdin title (to), crowdin url (from), folder name (from)
+all_langs:
+  - [false, false, ar-EG, "", Arabic (Egypt), "", ""]
+  - [false, false, ar-SA, "" ,Arabic (Saudi Arabia), "", ""]
+  - [false, false, bn, "" ,Bengali, "", ""]
+  - [false, false, de, "" ,German, "", ""]
+  - [true, false, en, "", English, "https://crowdin.com/project/ancap-ch/", from_en]
+  - [false, false, es-AR, "", "", "", ""]
+  - [false, false, es-BO, "", "", "", ""]
+  - [false, false, es-CL, "", "", "", ""]
+  - [false, false, es-CO, "", "", "", ""]
+  - [false, false, es-EM, "", "", "", ""]
+  - [false, false, es-ES, "", Spanish, "", ""]
+  - [false, false, es-MX, "", "", "", ""]
+  - [false, false, es-VE, "", Spanish (Venezuela), "", ""]
+  - [false, false, fa, "", Persian, "", ""]
+  - [false, false, fr, "", French, "", ""]
+  - [false, false, ha, "", Hausa, "", ""]
+  - [false, false, hi, "", Hindi, "", ""]
+  - [false, false, id, "", Indonesian, "", ""]
+  - [false, false, it, "", Italian, "", ""]
+  - [false, false, ja, "", Japanese, "", ""]
+  - [false, false, ko, "", Korean, "", ""]
+  - [false, false, ms, "", Malay, "", ""]
+  - [false, false, my, "", Burmese, "", ""]
+  - [false, false, pcm, "", Nigerian Pidgin, "", ""]
+  - [false, false, pl, "", Polish, "", ""]
+  - [false, true, pt-BR, "brazil" ,Portuguese (Brazilian), "", ""]
+  - [false, false, pt-PT, "", Portuguese, "", ""]
+  - [false, false, ru, "", Russian, "", ""]
+  - [false, false, th, "", Thai, "", ""]
+  - [false, false, tl, "", Tagalog, "", ""]
+  - [false, false, tr, "", Turkish, "", ""]
+  - [false, false, ur-IN, "", Urdu (India), "", ""]
+  - [false, false, ur-PK, "", Urdu (Pakistan), "", ""]
+  - [false, false, vi, "", Vietnamese, "", ""]
+  - [false, false, yo, "", Yoruba, "", ""]
+  - [false, false, zh-CN, "", Chinese Simplified, "", ""]
