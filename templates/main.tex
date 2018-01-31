@@ -10,13 +10,14 @@
 
 % shortcuts
 \def \utfbox {\nopagebreak\hfill □}
+\def \texthash {\#}
 
 {% include "preamble/footnote.tex" %}
 
 {% include "preamble/cover.tex" %}
 
 
-\usepackage[footnotes,hybrid]{markdown}
+\usepackage[footnotes,hybrid,underscores=false]{markdown}
 %\usepackage[hybrid]{markdown}
 \markdownSetup{
 	rendererPrototypes={
@@ -43,7 +44,13 @@
 \tableofcontents
 
 {% for md in info.content_files %}
+\begin{markdown}
+
+\end{markdown}
 \markdownInput{->{{md.0}}}%
+\begin{markdown}
+
+\end{markdown}
 {% endfor %}
 
 \end{document}
