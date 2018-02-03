@@ -14,6 +14,7 @@ extern crate semver;
 extern crate regex;
 //extern crate walkdir;
 
+
 mod errors {
     error_chain!{}
 }
@@ -28,6 +29,7 @@ use std::fs::read_dir;
 use std::path::Path;
 use std::path::PathBuf;
 //use std::io::prelude::*;
+use std::io;
 use tera::Tera;
 
 use semver::Version;
@@ -35,7 +37,7 @@ use regex::Regex;
 //use walkdir::WalkDir;
 //use log::Level;
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::collections::HashSet;
 
 use std::process::Command;
@@ -129,6 +131,8 @@ lazy_static! {
     pub static ref RE_FORWARD_ARROW: Regex = 
         Regex::new("\\{->|\\{-&gt;").unwrap(); // some macros may output -> as {-&gt;
 
+    pub static ref RE_SUB_HASH_SPACE_HASH: Regex = Regex::new("# #").unwrap(); 
+
     pub static ref RE_SYMB_AMPER: Regex = Regex::new("&").unwrap(); 
     pub static ref RE_SYMB_DOLLAR: Regex = Regex::new("\\$").unwrap(); 
     pub static ref RE_SYMB_CURLY_BRACK: Regex = Regex::new("\\{").unwrap(); 
@@ -139,6 +143,9 @@ lazy_static! {
     pub static ref RE_SYMB_TILDE: Regex = Regex::new("~").unwrap(); 
     pub static ref RE_SYMB_BSLASH: Regex = Regex::new("\\\\").unwrap(); 
     pub static ref RE_SYMB_A: Regex = Regex::new("a").unwrap(); 
+
+    // temporary
+    pub static ref RE_SYMB_UNDERSCORE: Regex = Regex::new("_").unwrap(); 
 }
 
 
@@ -272,14 +279,14 @@ fn run() -> Result<()> {
                     // println!("::{} ", proj_dir_name);
                     let yml = File::open(proj_dir.join("info.yml"))
                         .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir_name, e));
-                    if let Err(e) = yml {
+                    if let Err(_) = yml {
                         // println!(" >> yml err");
                         return None;
                     }
                     let yml = yml.unwrap();
                     let info = serde_yaml::from_reader(yml)
                         .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir_name, e));
-                    if let Err(e) = info {
+                    if let Err(_) = info {
                         // println!(" >> info err <{}>", e);
                         return None;
                     }
@@ -339,7 +346,7 @@ fn run() -> Result<()> {
         vs
     });
 
-    println!("\n\n\n{:?}\n\n\n", dirs);
+    //println!("\n\n\n{:?}\n\n\n", dirs);
 
 
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<()> {
@@ -371,15 +378,25 @@ fn run() -> Result<()> {
         Ok(())
     }
 
-    info!("Clearing every project tmp folder");
-    for proj in &dirs {
-        let path = proj.fulldir().join("tmp");
-        // let path = format!("{}/tmp", proj.fulldir());
-        if Path::new(&path).exists() {
-            fs::remove_dir_all(&path)
-                .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
+
+    println!("clear all tmp folders? [y/N] ");
+    
+    let mut cont = String::new();
+    io::stdin()
+        .read_line(&mut cont)
+        .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
+    if cont == "y\n" || cont == "Y\n" {
+        info!("Clearing every project tmp folder");
+        for proj in &dirs {
+            let path = proj.fulldir().join("tmp");
+            // let path = format!("{}/tmp", proj.fulldir());
+            if Path::new(&path).exists() {
+                fs::remove_dir_all(&path)
+                    .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
+            }
         }
     }
+
 
     // bail!("MORREU MAS PASSA BEM...");
 
@@ -397,7 +414,7 @@ fn run() -> Result<()> {
         let def_lang: Lang = def_lang.into_iter().next()
             .chain_err(|| "Failed to get the default language information from preset")?;
 
-        // TODO: other translations information
+        // TODO: other translations information (to link among themselves)
 
         for target in proj.info.targets.clone() {
             let destination = format!("{}/tmp/{}", &proj.fulldir_str(), target.name);
@@ -405,37 +422,54 @@ fn run() -> Result<()> {
                 .map_err(|e| format!("Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.", 
                     &proj.fulldir_str(), &proj.fulldir_str(), target.name, e))?;
             
+            println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
+            
+            let mut cont = String::new();
+            io::stdin()
+                .read_line(&mut cont)
+                .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
+            if cont == "n\n" || cont == "N\n" {
+                continue;
+            }
             
             // substitute content characters
             for content in proj.info.content_files.iter().map(|c| &c[0]) {
                 let path = format!("{}/{}", &destination, &content);
+
                 let mut file = File::open(&path)
-                    .map_err(|e| format!("failed to open content file to replace by regex. Error: {:?}", e))?;
+                    .map_err(|e| format!("failed to open content file to replace by regex. Error: {:?}. Path: <{}>", e, &path))?;
                 let mut s = String::new();
                 file.read_to_string(&mut s)
                     .map_err(|e| format!("failed to read content file to replace by regex. Error: {:?}", e))?;
                 file = File::create(&path)
                     .map_err(|e| format!("failed to overwrite content file to replace by regex. Error: {:?}", e))?;
-                let mut s2: String = "".into();
+                // let mut s2: String = "".into();
+
+                s = format!("\n{}\n", s); // adds new line around each file
+                // so headers on top of files won't break
 
                 //s = RE_TEST_A.replace_all(&s, "b").to_string(); // test
 
+                s = RE_SYMB_BSLASH.replace_all(&s, "\\textbackslash ").to_string();
+                // s = RE_SYMB_CURLY_BRACK.replace_all(&s, "\\{").to_string(); // TODO
+                // s = RE_SYMB_CURLY_BRACK2.replace_all(&s, "\\}").to_string(); // TODO
+                // TODO underline...
+                s = RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
+                s = RE_SYMB_DOLLAR.replace_all(&s, "\\${}").to_string();
+                s = RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
+                s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
+                s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
+                s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
+                s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
+
+                // temporary
+                s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();
+                
                 // s2 = "".into(); // loop
                 // while s2 != s {
                 //     s2 = s;
                 //     s = RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
                 // }
-
-                s = RE_SYMB_BSLASH.replace_all(&s, "\\textbackslash ").to_string();
-                // s = RE_SYMB_CURLY_BRACK.replace_all(&s, "\\{").to_string();
-                // s = RE_SYMB_CURLY_BRACK2.replace_all(&s, "\\}").to_string();
-                s = RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
-                s = RE_SYMB_DOLLAR.replace_all(&s, "\\${}").to_string();
-                s = RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
-                s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
-                s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
-                s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
-                
 
                 file.write_all(s.as_bytes())
                     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
