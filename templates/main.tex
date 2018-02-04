@@ -4,12 +4,18 @@
 % https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz
 % https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
 
+{% if target == "book"  %}
+\documentclass{book}%
+{% elif target == "article"  %}
 \documentclass{article}%
+{% endif %}
 
 {% include "preamble/lang.tex" %}
 
 % shortcuts
-\def \utfbox {\nopagebreak\hfill □}
+\usepackage{xcolor}
+% \def \utfbox {\nopagebreak\hfill □}
+\def \utfbox {\nopagebreak\hfill\color{black!40} □}
 \def \texthash {\#}
 
 {% include "preamble/footnote.tex" %}

@@ -5,42 +5,114 @@ cover_nodes: [page, title, author, translator, dummy]
 
 all_langs_from_dir: "./../crowdin"
 all_langs_to_dir: "./../crowdin_l10n_master"
+output_dir: "./../crowdin_outputs"
 
 # activated (from), activated (to), folder name (to), crowdin title (to), crowdin url (from), folder name (from)
 all_langs:
-  - [false, false, ar-EG, "", Arabic (Egypt), "", ""]
-  - [false, false, ar-SA, "" ,Arabic (Saudi Arabia), "", ""]
-  - [false, false, bn, "" ,Bengali, "", ""]
-  - [false, false, de, "" ,German, "", ""]
-  - [true, false, en, "", English, "https://crowdin.com/project/ancap-ch/", from_en]
+  - [false, false, ar-EG, "arabic", Arabic (Egypt), "", ""]
+  - [false, false, ar-SA, "arabic" ,Arabic (Saudi Arabia), "", ""]
+  - [false, false, bn, "bengali" ,Bengali, "", ""]
+  - [false, true, de, "german" ,German, "", ""]
+  - [true, false, en, "english", English, "https://crowdin.com/project/ancap-ch/", from_en]
   - [false, false, es-AR, "", "", "", ""]
   - [false, false, es-BO, "", "", "", ""]
   - [false, false, es-CL, "", "", "", ""]
   - [false, false, es-CO, "", "", "", ""]
   - [false, false, es-EM, "", "", "", ""]
-  - [false, false, es-ES, "", Spanish, "", ""]
+  - [false, true, es-ES, "spanish", Spanish, "", ""]
   - [false, false, es-MX, "", "", "", ""]
-  - [false, false, es-VE, "", Spanish (Venezuela), "", ""]
-  - [false, false, fa, "", Persian, "", ""]
-  - [false, false, fr, "", French, "", ""]
-  - [false, false, ha, "", Hausa, "", ""]
-  - [false, false, hi, "", Hindi, "", ""]
-  - [false, false, id, "", Indonesian, "", ""]
-  - [false, false, it, "", Italian, "", ""]
-  - [false, false, ja, "", Japanese, "", ""]
+  - [false, false, es-VE, "spanish", Spanish (Venezuela), "", ""]
+  - [false, false, fa, "farsi", Persian, "", ""]
+  - [false, true, fr, "french", French, "", ""]
+  - [false, true, ha, "english", Hausa, "", ""]
+  - [false, false, hi, "hindi", Hindi, "", ""]
+  - [false, true, id, "bahasai", Indonesian, "", ""]
+  - [false, false, it, "italian", Italian, "", ""]
+  - [false, true, ja, "", Japanese, "", ""]
   - [false, false, ko, "", Korean, "", ""]
-  - [false, false, ms, "", Malay, "", ""]
+  - [false, true, ms, "bahasam", Malay, "", ""]
   - [false, false, my, "", Burmese, "", ""]
-  - [false, false, pcm, "", Nigerian Pidgin, "", ""]
-  - [false, false, pl, "", Polish, "", ""]
+  - [false, true, pcm, "english", Nigerian Pidgin, "", ""]
+  - [false, true, pl, "polish", Polish, "", ""]
   - [false, true, pt-BR, "brazil" ,Portuguese (Brazilian), "", ""]
-  - [false, false, pt-PT, "", Portuguese, "", ""]
-  - [false, false, ru, "", Russian, "", ""]
-  - [false, false, th, "", Thai, "", ""]
-  - [false, false, tl, "", Tagalog, "", ""]
-  - [false, false, tr, "", Turkish, "", ""]
-  - [false, false, ur-IN, "", Urdu (India), "", ""]
-  - [false, false, ur-PK, "", Urdu (Pakistan), "", ""]
-  - [false, false, vi, "", Vietnamese, "", ""]
-  - [false, false, yo, "", Yoruba, "", ""]
-  - [false, false, zh-CN, "", Chinese Simplified, "", ""]
+  - [false, true, pt-PT, "portuges", Portuguese, "", ""]
+  - [false, true, ru, "russian", Russian, "", ""]
+  - [false, false, th, "thai", Thai, "", ""]
+  - [false, true, tl, "", Tagalog, "", ""]
+  - [false, true, tr, "turkish", Turkish, "", ""]
+  - [false, true, ur-IN, "urdu", Urdu (India), "", ""]
+  - [false, true, ur-PK, "urdu", Urdu (Pakistan), "", ""]
+  - [false, false, vi, "vietnamese", Vietnamese, "", ""]
+  - [false, true, yo, "english", Yoruba, "", ""]
+  - [false, true, zh-CN, "", Chinese Simplified, "", ""]
+
+# arabic
+# bengali
+# *catalan
+# *dutch
+# english
+# *esperanto
+# farsi
+# german
+# *greek
+# *hebrew
+# hindi
+# italian
+# *lao
+# *lsorbian
+# *magyar
+# russian
+# *sanskrit
+# *serbian
+# *syriac
+# thai
+# *usorbian
+
+
+# albanian
+# *amharic
+# *armenian
+# *asturian
+# bahasai
+# bahasam
+# *basque
+# brazil[ian]
+# *breton
+# *bulgarian
+# *coptic
+# *croatian
+# *czech
+# *danish
+# *divehi
+# *estonian
+# *finnish
+# french
+# *galician
+# *icelandic
+# *interlingua
+# *irish
+# *latin
+# *latvian
+# *lithuanian
+# *malayalam
+# *marathi
+# *norsk
+# *nynorsk
+# *occitan
+# polish
+# portuges
+# *romanian
+# *samin
+# *scottish
+# *slovak
+# *slovenian
+# spanish
+# *swedish
+# *tamil
+# *telugu
+# turkish
+# *turkmen
+# *ukrainian
+# urdu
+# vietnamese
+# *welsh

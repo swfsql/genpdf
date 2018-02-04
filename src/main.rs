@@ -118,6 +118,7 @@ struct Consts {
     cover_nodes: Vec<String>,
     all_langs_from_dir: String,
     all_langs_to_dir: String,
+    output_dir: String,
     all_langs: Vec<Lang>,
 }
 
@@ -402,7 +403,13 @@ fn run() -> Result<()> {
 
     // TODO: a structure that groups some information for the same project for different languages
 
-    'outer: for proj in &dirs {
+    let mut all_from_now_on = false;
+
+
+
+
+    // for proj in &dirs {
+    let dir_res = dirs.iter().map(|proj| {
         info!("Working on project: {:?}\n", &proj);
         copy_files_except_tmp(&proj.fulldir_str(), &format!("{}/tmp/original", &proj.fulldir_str()))
             .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.fulldir_str(), e))?;
@@ -424,12 +431,17 @@ fn run() -> Result<()> {
             
             println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
             
-            let mut cont = String::new();
-            io::stdin()
-                .read_line(&mut cont)
-                .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
-            if cont == "n\n" || cont == "N\n" {
-                continue;
+            if !all_from_now_on {
+                let mut cont = String::new();
+                io::stdin()
+                    .read_line(&mut cont)
+                    .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
+                if cont == "n\n" || cont == "N\n" {
+                    continue;
+                } else if cont == "a\n" || cont == "A\n" {
+                    all_from_now_on = true;
+                }
+
             }
             
             // substitute content characters
@@ -504,7 +516,7 @@ fn run() -> Result<()> {
 
             let mut rendered = TERA.render("main.tex", &def)
                 .chain_err(|| "Failed to render the tex templates")?;
-            rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string();
+            rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string(); // }
             debug!("{}", rendered);
 
             let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.fulldir_str(), target.name))
@@ -536,21 +548,62 @@ fn run() -> Result<()> {
                     .args(&["/C", cmd])
                     //.args(&["/C", cmd.to_str().unwrap()])
                     .output()
-                    .expect("failed to execute XeLaTeX process.");
+                    .chain_err(|| "Falied to create tex file")?;
                 
                 if !output.status.success() {
-                    error!("XeLaTeX failed.");
-                    println!("status: {}", output.status);
-                    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-                    println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-                    ::std::process::exit(1);
+
+                    let err_msg = format!("status: {}\n; stdout: {}\n; stderr: {}\n", 
+                        output.status, 
+                        String::from_utf8_lossy(&output.stdout), 
+                        String::from_utf8_lossy(&output.stderr));
+
+                        println!("error found: \n{}", err_msg);
+
+                        bail!("Error {}.", err_msg);
+                        // Err(format!("error.. "));
+                } else { // success
+                    // copy to output folder
+
+                    // output/pt-BR/EEPP/EEPP-pc.pdf
+                    // const  lang  name name-target.ext
+
+                    let extension = Path::new(&format!("{}/main_ok.pdf", &destination)).extension().unwrap().to_string_lossy().to_string();
+
+                    let out_dest_dir = format!("{}/{}/{}", 
+                        consts.output_dir, 
+                        &def.def_lang.title,
+                        &proj.proj_dir);
+                    let out_dest_file = format!("{}-{}.{}", 
+                        &proj.proj_dir, target.name, extension);
+                    let out_dest = format!("{}/{}", out_dest_dir, out_dest_file);
+                    
+                    fs::create_dir_all(&out_dest_dir)
+                        .chain_err(|| format!("Error when creating directories {}", 
+                            &out_dest_dir))?;
+
+                    fs::copy(
+                        &format!("{}/main_ok.pdf", &destination), 
+                        format!("{}", &out_dest))
+                        .chain_err(|| format!("Error when copying files from {}/main_ok.pdf into {}.", 
+                            &destination, &out_dest))?;
+                    
+                    println!("file copied to: {}", &out_dest);
                 }
 
             }
 
         }
+
+        Ok(())
+    
+    })
+        .filter(|res| if let &Err(_) = res {true} else {false})
+        .collect::<Vec<Result<_>>>();
+    for res in dir_res {
+        println!("DIR ERROR: {:?}", res);
     }
     
+
     info!("finished..");
     Ok(())
 }
