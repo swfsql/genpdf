@@ -455,6 +455,11 @@ fn run() -> Result<()> {
 
             }
             
+            let mut initial = 
+                if target.name == "article" {false} 
+                else if target.name == "book" {true}
+                else {false};
+
             // substitute content characters
             for content in proj.info.content_files.iter().map(|c| &c[0]) {
                 let path = format!("{}/{}", &destination, &content);
@@ -484,6 +489,43 @@ fn run() -> Result<()> {
                 s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
                 s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
                 s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
+
+                let mut do_initial = |line: &str, start: &str| {
+                    if line.starts_with(start) {
+                        initial = true;
+                        line.to_string()
+                    } 
+                    else if line.starts_with("#") {
+                        initial = false;
+                        line.to_string()
+                    }
+                    else if initial {
+                        if line.trim() == "" {
+                            line.to_string()
+                        } else {
+                            initial = false;
+                            let initials: String = line.chars()
+                                .take_while(|c| c.is_alphanumeric() && !c.is_numeric())
+                                .collect();
+                            let line_start_start: String = initials.chars().take(1).collect();
+                            let line_start_end: String = initials.chars().skip(1).collect();
+                            let line_start = format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
+                            let line_end: String = line.chars().skip(initials.len()).collect();
+                            
+                            format!("{}{}", line_start, line_end)
+
+                        }
+                    } else {
+                        line.to_string()
+                    }
+                };
+
+                // initial
+                if target.name == "article" {
+                    s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();
+                } else if target.name == "book" {
+                    s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
+                }
 
                 // temporary
                 s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();

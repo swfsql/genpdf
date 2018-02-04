@@ -43,7 +43,28 @@
 
 
 
+\usepackage{lettrine}
+
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=.115,#1]{->#2}{->#3}}
+
+% \newfont{\initial}{wcmr17 at 48pt}
+% \newcommand{\frstltr}[1]{
+%     \newbox{\litera}
+%     \savebox{\litera}{\hbox #1}
+%     % \savebox{\litera}{\hbox{\initial #1}}
+%     \vspace*{.2\ht\litera}\par\noindent
+%     \begin{wrapfigure}{l}{.8\wd\litera}
+%     \vbox to .05\ht\litera{\vss\usebox{\litera}\vspace*{-.65\ht\litera}}
+%     \vspace*{-.2\ht\litera}
+%     \end{wrapfigure}}
+% \frstltr{Д}олжно работать!
+
+
 \begin{document}%
+
+% \DECORATE{T}{esting} the thing. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. 
+
+% \DECORATE{T}{esting} the thing. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. 
 
 {% include "cover/cover.tex" %}
 
