@@ -15,6 +15,7 @@ regex = "0.2"
 walkdir = "1.0.7"
 log = "0.3"
 env_logger = "0.4.3"
+rayon = "0.9"
 
 # for thai language
 #chamkho = "0.1.0"

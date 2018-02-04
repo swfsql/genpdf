@@ -12,6 +12,7 @@ extern crate env_logger;
 extern crate serde_yaml;
 extern crate semver;
 extern crate regex;
+extern crate rayon;
 //extern crate walkdir;
 
 
@@ -42,6 +43,9 @@ use std::collections::HashSet;
 
 use std::process::Command;
 //use std::ffi::OsStr;
+
+use rayon::prelude::*;
+use std::env;
 
 
 type VS = Vec<String>;
@@ -119,6 +123,7 @@ struct Consts {
     all_langs_from_dir: String,
     all_langs_to_dir: String,
     output_dir: String,
+    num_cpu: u8,
     all_langs: Vec<Lang>,
 }
 
@@ -175,6 +180,8 @@ struct Defaults {
 }
 
 fn run() -> Result<()> {
+
+
     let ymlc = File::open("const.yml")
         .chain_err(|| "Failed to open the yml const file")?;
     let consts: Consts = serde_yaml::from_reader(ymlc)
@@ -182,6 +189,7 @@ fn run() -> Result<()> {
     let min_ver = Version::parse(&consts.min_ver)
         .chain_err(|| format!("Failed to parse the consts version ({})", &consts.min_ver))?;
 
+    env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
 
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
     struct DirInfo {
@@ -403,14 +411,17 @@ fn run() -> Result<()> {
 
     // TODO: a structure that groups some information for the same project for different languages
 
-    let mut all_from_now_on = false;
-
-
-
+    let mut all_from_now_on = true;
+    let skip_templates = true;
 
     // for proj in &dirs {
-    let dir_res = dirs.iter().map(|proj| {
+    let dir_res = dirs.par_iter().map(|proj| {
         info!("Working on project: {:?}\n", &proj);
+
+        if skip_templates && proj.proj_dir == "template" {
+            return Ok(());
+        }
+
         copy_files_except_tmp(&proj.fulldir_str(), &format!("{}/tmp/original", &proj.fulldir_str()))
             .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.fulldir_str(), e))?;
 
@@ -439,7 +450,7 @@ fn run() -> Result<()> {
                 if cont == "n\n" || cont == "N\n" {
                     continue;
                 } else if cont == "a\n" || cont == "A\n" {
-                    all_from_now_on = true;
+                    // all_from_now_on = true;
                 }
 
             }

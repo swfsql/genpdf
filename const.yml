@@ -7,6 +7,8 @@ all_langs_from_dir: "./../crowdin"
 all_langs_to_dir: "./../crowdin_l10n_master"
 output_dir: "./../crowdin_outputs"
 
+num_cpu: 3
+
 # activated (from), activated (to), folder name (to), crowdin title (to), crowdin url (from), folder name (from)
 all_langs:
   - [false, false, ar-EG, "arabic", Arabic (Egypt), "", ""]
