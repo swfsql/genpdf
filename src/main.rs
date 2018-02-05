@@ -171,6 +171,7 @@ struct Defaults {
     info: Info,
     info2: Info2,
     target: String,
+    info_target: InfoTarget,
 
     all_langs: Vec<Lang>,
     def_lang: Lang,
@@ -459,6 +460,7 @@ fn run() -> Result<()> {
                 if target.name == "article" {false} 
                 else if target.name == "book" {true}
                 else {false};
+            let mut sec_active = vec![false; 10];
 
             // substitute content characters
             for content in proj.info.content_files.iter().map(|c| &c[0]) {
@@ -489,6 +491,30 @@ fn run() -> Result<()> {
                 s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
                 s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
                 s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
+
+                let mut do_section_clear = |line: &str| {
+                    let depth = line.chars().take_while(|&c| c == '#').count();
+                    if depth == 0 {
+                        line.to_string()
+                    } else {
+                        for i in depth..9 {
+                            sec_active[i] = false;
+                        }
+                        if sec_active[depth - 1] {
+                            let mut line_start: String = "".into();
+                            if target.reset_footer_active && depth <= target.reset_footer_depth as usize {
+                                line_start += "\\endfoot";
+                            }
+                            if target.clear_page_active && depth <= target.clear_page_depth as usize {
+                                line_start += "\\endsec";
+                            };
+                            format!("{}\n\n{}", &line_start, line.to_string())
+                        } else {
+                            sec_active[depth - 1] = true;
+                            line.to_string()
+                        }
+                    }
+                };
 
                 let mut do_initial = |line: &str, start: &str| {
                     if line.starts_with(start) {
@@ -527,6 +553,17 @@ fn run() -> Result<()> {
                     s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
                 }
 
+                // section clearing (new page, reset footer)
+                if target.reset_footer_active || target.clear_page_active {
+                    s = s.lines().map(|line| do_section_clear(&line) + "\n").collect::<String>();
+                }
+                
+                if target.name == "article" {
+                    s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();
+                } else if target.name == "book" {
+                    s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
+                }
+
                 // temporary
                 s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();
                 
@@ -555,6 +592,7 @@ fn run() -> Result<()> {
                 info: proj.info.clone(),
                 info2: info2.clone(),
                 target: target.name.clone(),
+                info_target: target.clone(),
                 //
                 all_langs: all_langs.clone(),
                 def_lang: def_lang.clone(),
@@ -596,7 +634,7 @@ fn run() -> Result<()> {
 
             //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
 
-            for _ in 0..consts.passages {
+            for i in 0..consts.passages {
                 let output = Command::new("cmd")
                     .args(&["/C", cmd])
                     //.args(&["/C", cmd.to_str().unwrap()])
@@ -610,7 +648,7 @@ fn run() -> Result<()> {
                         String::from_utf8_lossy(&output.stdout), 
                         String::from_utf8_lossy(&output.stderr));
 
-                        println!("error found: \n{}", err_msg);
+                        println!("error when executing xelatex: \n{}", err_msg);
 
                         bail!("Error {}.", err_msg);
                         // Err(format!("error.. "));
@@ -620,12 +658,19 @@ fn run() -> Result<()> {
                     // output/pt-BR/EEPP/EEPP-pc.pdf
                     // const  lang  name name-target.ext
 
+                    if i != consts.passages - 1 {
+                        continue;
+                    }
+
+                    println!("preparing to copy a file..");
+
                     let extension = Path::new(&format!("{}/main_ok.pdf", &destination)).extension().unwrap().to_string_lossy().to_string();
 
+                    let capitals = proj.proj_dir.chars().filter(|c| c.is_uppercase()).collect::<String>();
                     let out_dest_dir = format!("{}/{}/{}", 
                         consts.output_dir, 
                         &def.def_lang.title,
-                        &proj.proj_dir);
+                        &capitals);
                     let out_dest_file = format!("{}-{}.{}", 
                         &proj.proj_dir, target.name, extension);
                     let out_dest = format!("{}/{}", out_dest_dir, out_dest_file);
@@ -640,7 +685,7 @@ fn run() -> Result<()> {
                         .chain_err(|| format!("Error when copying files from {}/main_ok.pdf into {}.", 
                             &destination, &out_dest))?;
                     
-                    println!("file copied to: {}", &out_dest);
+                    println!("\n->file copied to: \n{}\n", &out_dest);
                 }
 
             }

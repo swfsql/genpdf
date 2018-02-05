@@ -10,13 +10,27 @@
 \documentclass{article}%
 {% endif %}
 
+% info.target.reset_footer_active
+% info.target.reset_footer_depth: 0
+
+% info.target.clear_page_active: true
+% info.target.clear_page_depth: 1
+
+
+\def \endsec {\utfboxraw\clearpage}
+\def \endfoot {\setcounter{footnote}{0}}
+
+
 {% include "preamble/lang.tex" %}
 
 % shortcuts
 \usepackage{xcolor}
 % \def \utfbox {\nopagebreak\hfill □}
-\def \utfbox {\nopagebreak\hfill\color{black!40} □}
+\def \utfboxraw {\hfill\color{black!40} □\color{black}}
+\def \utfbox {\nopagebreak\utfboxraw}
 \def \texthash {\#}
+
+\setcounter{tocdepth}{->{{ info_target.toc_depth }}}
 
 {% include "preamble/footnote.tex" %}
 
@@ -69,6 +83,11 @@
 {% include "cover/cover.tex" %}
 
 \tableofcontents
+
+{% if target == "book"  %}
+	\clearpage
+{% elif target == "article"  %}
+{% endif %}
 
 {% for md in info.content_files %}
 \begin{markdown}
