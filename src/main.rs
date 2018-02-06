@@ -414,6 +414,7 @@ fn run() -> Result<()> {
 
     let mut all_from_now_on = true;
     let skip_templates = true;
+    let mut num_skips = 0;
 
     // for proj in &dirs {
     let dir_res = dirs.par_iter().map(|proj| {
@@ -443,18 +444,23 @@ fn run() -> Result<()> {
             
             println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
             
-            if !all_from_now_on {
-                let mut cont = String::new();
-                io::stdin()
-                    .read_line(&mut cont)
-                    .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
-                if cont == "n\n" || cont == "N\n" {
-                    continue;
-                } else if cont == "a\n" || cont == "A\n" {
-                    // all_from_now_on = true;
-                }
-
-            }
+            // num_skips -= 1;
+            // if !all_from_now_on && num_skips <= 0 {
+            //     let mut cont = String::new();
+            //     io::stdin()
+            //         .read_line(&mut cont)
+            //         .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
+            //     if let Ok(skip) = cont.trim().parse::<i32>() {
+            //         num_skips = skip;
+            //         continue;
+            //     } else if cont == "n\n" || cont == "N\n" {
+            //         continue;
+            //     } else if cont == "a\n" || cont == "A\n" {
+            //         // all_from_now_on = true;
+            //     } 
+            // } else if num_skips > 0 {
+            //     continue;
+            // }
             
             let mut initial = 
                 if target.name == "article" {false} 
@@ -531,12 +537,12 @@ fn run() -> Result<()> {
                         } else {
                             initial = false;
                             let initials: String = line.chars()
-                                .take_while(|c| c.is_alphanumeric() && !c.is_numeric())
+                                .take_while(|c| c.is_alphanumeric() && !c.is_numeric() && !c.is_whitespace())
                                 .collect();
                             let line_start_start: String = initials.chars().take(1).collect();
                             let line_start_end: String = initials.chars().skip(1).collect();
                             let line_start = format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
-                            let line_end: String = line.chars().skip(initials.len()).collect();
+                            let line_end: String = line.chars().skip(initials.chars().count()).collect();
                             
                             format!("{}{}", line_start, line_end)
 
