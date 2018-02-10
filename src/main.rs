@@ -15,6 +15,11 @@ extern crate regex;
 extern crate rayon;
 //extern crate walkdir;
 
+extern crate glium;
+#[macro_use]
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
 
 mod errors {
     error_chain!{}
@@ -46,6 +51,9 @@ use std::process::Command;
 
 use rayon::prelude::*;
 use std::env;
+
+use imgui::*;
+mod support;
 
 
 type VS = Vec<String>;
@@ -180,6 +188,25 @@ struct Defaults {
     consts: Consts,
 }
 
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct DirInfo {
+    base_dir: String,
+    from_dir: String,
+    lang_dir: String,
+    proj_dir: String,
+    info: Info,
+}
+
+impl DirInfo {
+    fn fulldir(&self) -> PathBuf {
+        Path::new(&self.base_dir).join(&self.from_dir).join(&self.lang_dir).join(&self.proj_dir)
+    }
+    fn fulldir_str(&self) -> String {
+        format!("{}/{}/{}/{}", self.base_dir, self.from_dir, self.lang_dir, self.proj_dir)
+    }
+}
+
 fn run() -> Result<()> {
 
 
@@ -192,23 +219,6 @@ fn run() -> Result<()> {
 
     env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
 
-    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-    struct DirInfo {
-        base_dir: String,
-        from_dir: String,
-        lang_dir: String,
-        proj_dir: String,
-        info: Info,
-    };
-
-    impl DirInfo {
-        fn fulldir(&self) -> PathBuf {
-            Path::new(&self.base_dir).join(&self.from_dir).join(&self.lang_dir).join(&self.proj_dir)
-        }
-        fn fulldir_str(&self) -> String {
-            format!("{}/{}/{}/{}", self.base_dir, self.from_dir, self.lang_dir, self.proj_dir)
-        }
-    }
 
     // There are several 2D vectors, according to the language and then index. 
     // First, there are the originals and the translations 2D vectors.
@@ -359,6 +369,7 @@ fn run() -> Result<()> {
     //println!("\n\n\n{:?}\n\n\n", dirs);
 
 
+
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<()> {
         fs::create_dir_all(to)
             .chain_err(|| format!("Failed to create a new {} directory.", to))?;
@@ -389,38 +400,11 @@ fn run() -> Result<()> {
     }
 
 
-    println!("clear all tmp folders? [y/N] ");
-    
-    let mut cont = String::new();
-    io::stdin()
-        .read_line(&mut cont)
-        .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
-    if cont == "y\n" || cont == "Y\n" {
-        info!("Clearing every project tmp folder");
-        for proj in &dirs {
-            let path = proj.fulldir().join("tmp");
-            // let path = format!("{}/tmp", proj.fulldir());
-            if Path::new(&path).exists() {
-                fs::remove_dir_all(&path)
-                    .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
-            }
-        }
-    }
-
-
-    // bail!("MORREU MAS PASSA BEM...");
-
-    // TODO: a structure that groups some information for the same project for different languages
-
-    let mut all_from_now_on = true;
-    let skip_templates = true;
-    let mut num_skips = 0;
-
-    // for proj in &dirs {
-    let dir_res = dirs.par_iter().map(|proj| {
+    fn gen_proj(proj: &DirInfo, consts: &Consts) -> Result<()> {
         info!("Working on project: {:?}\n", &proj);
 
-        if skip_templates && proj.proj_dir == "template" {
+        // if skip_templates && proj.proj_dir == "template" 
+        if true && proj.proj_dir == "template" {
             return Ok(());
         }
 
@@ -443,24 +427,6 @@ fn run() -> Result<()> {
                     &proj.fulldir_str(), &proj.fulldir_str(), target.name, e))?;
             
             println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
-            
-            // num_skips -= 1;
-            // if !all_from_now_on && num_skips <= 0 {
-            //     let mut cont = String::new();
-            //     io::stdin()
-            //         .read_line(&mut cont)
-            //         .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
-            //     if let Ok(skip) = cont.trim().parse::<i32>() {
-            //         num_skips = skip;
-            //         continue;
-            //     } else if cont == "n\n" || cont == "N\n" {
-            //         continue;
-            //     } else if cont == "a\n" || cont == "A\n" {
-            //         // all_from_now_on = true;
-            //     } 
-            // } else if num_skips > 0 {
-            //     continue;
-            // }
             
             let mut initial = 
                 if target.name == "article" {false} 
@@ -699,14 +665,169 @@ fn run() -> Result<()> {
         }
 
         Ok(())
-    
-    })
-        .filter(|res| if let &Err(_) = res {true} else {false})
-        .collect::<Vec<Result<_>>>();
-    for res in dir_res {
-        println!("DIR ERROR: {:?}", res);
     }
+
+
+    // ui.checkbox(im_str!("With Alpha Preview"), &mut s.alpha_preview);
+
+
+    {
+        const CLEAR_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+
+        let dir_by_lang = |ds: Vec<DirInfo>| {
+            consts.all_langs.iter().map(|l| {
+                let lan = &l.to_dir_name;
+                let filtered = ds.iter().cloned()
+                    .filter(|d| &d.lang_dir == lan)
+                    .map(|d| (d, false))
+                    .collect::<Vec<(DirInfo, bool)>>();
+                (lan.to_string(), filtered.clone())
+            }).collect::<Vec<(_, Vec<_>)>>()
+        };
+
+
+        let mut dirs2 = dir_by_lang(dirs.clone());
+
+        support::run("hellow_world.rs".to_owned(), CLEAR_COLOR, |ui| {
+            hello_world(ui, &mut dirs2, consts.clone())
+        });
+
+
+
+
+        fn hello_world<'a>(ui: &Ui<'a>, dirs_by_lang: &mut Vec<(String, Vec<(DirInfo, bool)>)>, consts: Consts) -> bool {
+            ui.window(im_str!("Hello world"))
+                .size((1266.0, 618.0), ImGuiCond::FirstUseEver)
+                .build(|| {
+                    // ui.text(im_str!("Hello world!"));
+                    // ui.text(im_str!("This...is...imgui-rs!"));
+                    // ui.separator();
+                    // let mouse_pos = ui.imgui().mouse_pos();
+                    // ui.text(im_str!(
+                    //     "Mouse Position: ({:.1},{:.1})",
+                    //     mouse_pos.0,
+                    //     mouse_pos.1
+                    // ));
+                    // ui.separator();
+                    if ui.small_button(im_str!("Run selected")) {
+                        let chk_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
+                            .map(|(lan, d)| d)
+                            .fold(vec![], |mut acc, ref vo12| {
+                                let chk_dirs = vo12.iter()
+                                    .filter_map(|&(ref dir, checked): &(DirInfo, bool)| 
+                                        if checked {Some(dir.clone())} 
+                                        else {None})
+                                    .collect::<Vec<DirInfo>>();
+                                acc.extend(chk_dirs);
+                                acc
+                            });
+
+                        // let dir_res = chk_d.par_iter()
+                        let dir_res = chk_d.iter()
+                            .map(|proj| gen_proj(proj, &consts))
+                            .filter(|res| if let &Err(_) = res {true} else {false})
+                            .collect::<Vec<Result<_>>>();
+                        for res in dir_res {
+                            println!("DIR ERROR: {:?}", res);
+                        }
+
+                    } else 
+                    if ui.small_button(im_str!("Clear all")) {
+                        for &mut(ref mut lan, ref mut d2) in dirs_by_lang {
+                            for &mut(ref dir, ref mut checked) in d2.iter_mut() {
+                                *checked = false;
+                            };
+                        }
+                    } else 
+                    if ui.small_button(im_str!("Toggle all")) {
+                        for &mut(ref mut lan, ref mut d2) in dirs_by_lang {
+                            for &mut(ref dir, ref mut checked) in d2.iter_mut() {
+                                *checked = !*checked;
+                            };
+                        }
+                    } else {
+                        ui.tree_node(im_str!("Projects")).build(|| for &mut(ref mut lan, ref mut d2) in dirs_by_lang {
+                            ui.tree_node(im_str!("{}", lan)).build(|| for &mut(ref dir, ref mut checked) in d2.iter_mut() {
+                                // ui.text(im_str!("{}", dir.proj_dir));
+                                ui.checkbox(im_str!("{}", dir.proj_dir), checked);
+                            });
+                        });
+                    }
+                    // ui.tree_node(im_str!("Bullets")).build(|| {
+                    //     ui.bullet_text(im_str!("Bullet point 1"));
+                    //     ui.bullet_text(im_str!("Bullet point 2\nOn multiple lines"));
+                    //     ui.bullet();
+                    //     ui.text(im_str!("Bullet point 3 (two calls)"));
+
+                    //     ui.bullet();
+                    //     ui.small_button(im_str!("Button"));
+                    // });
+                    // ui.tree_node(im_str!("Colored text")).build(|| {
+                    //     ui.text_colored((1.0, 0.0, 1.0, 1.0), im_str!("Pink"));
+                    //     ui.text_colored((1.0, 1.0, 0.0, 1.0), im_str!("Yellow"));
+                    //     ui.text_disabled(im_str!("Disabled"));
+                    // });
+                    // ui.tree_node(im_str!("Word Wrapping")).build(|| {
+                    //     ui.text_wrapped(im_str!(
+                    //         "This text should automatically wrap on the edge of \
+                    //                             the window.The current implementation for text \
+                    //                             wrapping follows simple rulessuitable for English \
+                    //                             and possibly other languages."
+                    //     ));
+                    //     ui.spacing();
+
+                    //     ui.text(im_str!("Test paragraph 1:"));
+                    //     // TODO
+
+                    //     ui.text(im_str!("Test paragraph 2:"));
+                    //     // TODO
+                    // });
+                    // ui.tree_node(im_str!("UTF-8 Text")).build(|| {
+                    //     ui.text_wrapped(im_str!(
+                    //         "CJK text will only appear if the font was loaded \
+                    //                             with theappropriate CJK character ranges. Call \
+                    //                             io.Font->LoadFromFileTTF()manually to load extra \
+                    //                             character ranges."
+                    //     ));
+
+                    //     ui.text(im_str!("Hiragana: かきくけこ (kakikukeko)"));
+                    //     ui.text(im_str!("Kanjis: 日本語 (nihongo)"));
+                    // });
+                });
+
+            true
+        }
+    }
+
+{
+
+
+    println!("clear all tmp folders? [y/N] ");
     
+    let mut cont = String::new();
+    io::stdin()
+        .read_line(&mut cont)
+        .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
+    if cont == "y\n" || cont == "Y\n" {
+        info!("Clearing every project tmp folder");
+        for proj in &dirs {
+            let path = proj.fulldir().join("tmp");
+            // let path = format!("{}/tmp", proj.fulldir());
+            if Path::new(&path).exists() {
+                fs::remove_dir_all(&path)
+                    .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
+            }
+        }
+    }
+
+
+    // bail!("MORREU MAS PASSA BEM...");
+
+    // TODO: a structure that groups some information for the same project for different languages
+
+
+
+}
 
     info!("finished..");
     Ok(())

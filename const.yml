@@ -5,7 +5,7 @@ cover_nodes: [page, title, author, translator, dummy]
 
 all_langs_from_dir: "./../crowdin"
 all_langs_to_dir: "./../crowdin_l10n_master"
-output_dir: "./../crowdin_outputs"
+output_dir: "./../utopian_outputs"
 
 num_cpu: 2
 
