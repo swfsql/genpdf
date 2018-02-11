@@ -8,7 +8,7 @@
    \def \titleU {-.151\paperheight}
 {% endif %}
 
-% Hidden text, so any 'real' text starts after the title, etc
+% Hidden text, so any 'real' text starts after (spacing) the title, etc
 \noindent\begin{tikzpicture}[remember picture]
   \begin{pgfonlayer}{front}
     \coordinate (title_c) at ($ (0,0) + (0,\titleU) $);
@@ -23,18 +23,29 @@
 
     % Adds the background image
     \noindent\begin{pgfonlayer}{bg}    % select the background layer
-      \noindent\node[inner sep=0, anchor=north west,name=capa] at (current page.north west) {
-        \ifdefined\mobile
-          %\noindent\ClipImage{\paperwidth}{\paperheight}{\capa}
-          %\noindent\includegraphics[min width=\paperwidth,min height=\paperheight,keepaspectratio]{\capa}
-        \else
-          %\noindent\includegraphics[width=\paperwidth,keepaspectratio]{\capa}
-        \fi
-      };
+
+      {% for cover in info_target.covers %}
+        \noindent\node[inner sep=0, anchor=north west,name=capa] at (current page.north west) {
+            \noindent\includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{->{{cover.cover_file}}}
+            %\noindent\ClipImage{\paperwidth}{\paperheight}{->{{cover.cover_file}}}
+        };
+
+
+      % \noindent\node[inner sep=0, anchor=north west,name=capa] at (current page.north west) {
+      %   \ifdefined\mobile
+      %     %\noindent\ClipImage{\paperwidth}{\paperheight}{\capa}
+      %     %\noindent\includegraphics[min width=\paperwidth,min height=\paperheight,keepaspectratio]{\capa}
+      %   \else
+      %     %\noindent\includegraphics[width=\paperwidth,keepaspectratio]{\capa}
+      %   \fi
+      % };
             
-      \ifdefined\mobile\else
-        %\fill [anchor=west, fill=white] (-11,.5) rectangle (current page.south east);
-      \fi
+      %\ifdefined\mobile\else
+      %  %\fill [anchor=west, fill=white] (-11,.5) rectangle (current page.south east);
+      %\fi
+      
+      {% endfor %}
+
     \end{pgfonlayer}
 
 

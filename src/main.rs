@@ -85,6 +85,12 @@ struct InfoResource {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+struct InfoCover {
+    cover_file: String,
+    cover_dimensions: Vec<u32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 struct InfoTarget {
     name: String,
     reset_footer_active: bool,
@@ -92,6 +98,7 @@ struct InfoTarget {
     clear_page_active: bool,
     clear_page_depth: u8,
     toc_depth: u8,
+    covers: Vec<InfoCover>,
 }
 
 
@@ -444,6 +451,9 @@ fn run() -> Result<()> {
             copy_files_except_tmp(&format!("{}/tmp/original", &proj.fulldir_str()), &destination)
                 .map_err(|e| format!("Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.", 
                     &proj.fulldir_str(), &proj.fulldir_str(), target.name, e))?;
+            
+            // TODO: resize the cover images
+            println!("target: <{:?}>", target);
             
             println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
             
