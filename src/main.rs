@@ -411,6 +411,25 @@ fn run() -> Result<()> {
         copy_files_except_tmp(&proj.fulldir_str(), &format!("{}/tmp/original", &proj.fulldir_str()))
             .map_err(|e| format!("Error when copying files into {}/tmp/dir folder. Due to {}.", &proj.fulldir_str(), e))?;
 
+        println!("res: <{:?}>", proj.info.resources);
+        if let &Some(ref ress) = &proj.info.resources {
+            for res in ress {
+                if let Some(ref rule) = res.rule {
+                    if rule == "front_cover" {
+                        if let Some(ref content) = res.content {
+                            let origin = &format!("{}/{}/_asset/_image/{}", &proj.base_dir, &proj.from_dir, content);
+                            let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
+                            println!("antes de copiar");
+                            fs::copy(&format!("{}", &origin), &format!("{}", &dest))
+                                    .chain_err(|| format!("Error when copying files from {} into {}.", 
+                                        &origin, &dest))?;
+                            println!("depois de copiar");
+                        }
+                    }
+                }
+            }
+        }
+
         // lang information
         let all_langs = consts.all_langs.clone();
         let (def_lang, other_langs) : (Vec<Lang>, Vec<Lang>) =
@@ -709,6 +728,26 @@ fn run() -> Result<()> {
                     //     mouse_pos.1
                     // ));
                     // ui.separator();
+                    if ui.small_button(im_str!("Clear all tmps")) {
+                        let clear_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
+                            .map(|(lan, d)| d)
+                            .fold(vec![], |mut acc, ref vo12| {
+                                let chk_dirs = vo12.iter()
+                                    .map(|&(ref dir, checked): &(DirInfo, bool)| 
+                                        dir.clone()) 
+                                    .collect::<Vec<DirInfo>>();
+                                acc.extend(chk_dirs);
+                                acc
+                            });
+                        for proj in &clear_d {
+                            let path = proj.fulldir().join("tmp");
+                            // let path = format!("{}/tmp", proj.fulldir());
+                            if Path::new(&path).exists() {
+                                fs::remove_dir_all(&path)
+                                    .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e)); // ?
+                            }
+                        }
+                    }
                     if ui.small_button(im_str!("Run selected")) {
                         let chk_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
                             .map(|(lan, d)| d)
@@ -753,46 +792,6 @@ fn run() -> Result<()> {
                             });
                         });
                     }
-                    // ui.tree_node(im_str!("Bullets")).build(|| {
-                    //     ui.bullet_text(im_str!("Bullet point 1"));
-                    //     ui.bullet_text(im_str!("Bullet point 2\nOn multiple lines"));
-                    //     ui.bullet();
-                    //     ui.text(im_str!("Bullet point 3 (two calls)"));
-
-                    //     ui.bullet();
-                    //     ui.small_button(im_str!("Button"));
-                    // });
-                    // ui.tree_node(im_str!("Colored text")).build(|| {
-                    //     ui.text_colored((1.0, 0.0, 1.0, 1.0), im_str!("Pink"));
-                    //     ui.text_colored((1.0, 1.0, 0.0, 1.0), im_str!("Yellow"));
-                    //     ui.text_disabled(im_str!("Disabled"));
-                    // });
-                    // ui.tree_node(im_str!("Word Wrapping")).build(|| {
-                    //     ui.text_wrapped(im_str!(
-                    //         "This text should automatically wrap on the edge of \
-                    //                             the window.The current implementation for text \
-                    //                             wrapping follows simple rulessuitable for English \
-                    //                             and possibly other languages."
-                    //     ));
-                    //     ui.spacing();
-
-                    //     ui.text(im_str!("Test paragraph 1:"));
-                    //     // TODO
-
-                    //     ui.text(im_str!("Test paragraph 2:"));
-                    //     // TODO
-                    // });
-                    // ui.tree_node(im_str!("UTF-8 Text")).build(|| {
-                    //     ui.text_wrapped(im_str!(
-                    //         "CJK text will only appear if the font was loaded \
-                    //                             with theappropriate CJK character ranges. Call \
-                    //                             io.Font->LoadFromFileTTF()manually to load extra \
-                    //                             character ranges."
-                    //     ));
-
-                    //     ui.text(im_str!("Hiragana: かきくけこ (kakikukeko)"));
-                    //     ui.text(im_str!("Kanjis: 日本語 (nihongo)"));
-                    // });
                 });
 
             true
@@ -804,21 +803,6 @@ fn run() -> Result<()> {
 
     println!("clear all tmp folders? [y/N] ");
     
-    let mut cont = String::new();
-    io::stdin()
-        .read_line(&mut cont)
-        .map_err(|e| format!("Failed to read temrinal. Error: {:?}.", e))?;
-    if cont == "y\n" || cont == "Y\n" {
-        info!("Clearing every project tmp folder");
-        for proj in &dirs {
-            let path = proj.fulldir().join("tmp");
-            // let path = format!("{}/tmp", proj.fulldir());
-            if Path::new(&path).exists() {
-                fs::remove_dir_all(&path)
-                    .map_err(|e| format!("Failed to clear the contents of {}/tmp directory. Due to {}.", proj.fulldir_str(), e))?;
-            }
-        }
-    }
 
 
     // bail!("MORREU MAS PASSA BEM...");
