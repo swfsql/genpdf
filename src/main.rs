@@ -13,6 +13,9 @@ extern crate serde_yaml;
 extern crate semver;
 extern crate regex;
 extern crate rayon;
+extern crate image;
+
+use image::{FilterType, GenericImage, Pixel, ImageBuffer, imageops};
 //extern crate walkdir;
 
 extern crate glium;
@@ -71,8 +74,8 @@ struct InfoTranslation {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 struct InfoPerson {
-    identifier: String,
-    rule: String,
+    identifier: Option<String>,
+    rule: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -111,7 +114,7 @@ struct Info {
     more_infos: Option<Vec<VS>>,
     tags: OVS,
     tag_prefix: Option<String>,
-    persons_id: Option<Vec<InfoPerson>>,
+    persons: Option<Vec<InfoPerson>>,
     resources: Option<Vec<InfoResource>>,
     targets: Vec<InfoTarget>,
     version: String,
@@ -227,27 +230,6 @@ fn run() -> Result<()> {
     env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
 
 
-    // There are several 2D vectors, according to the language and then index. 
-    // First, there are the originals and the translations 2D vectors.
-    // Then each one is separated into the ones that uses transifex (_tsfx), and those who don't (_local).
-
-    // Then, regarding transifex, a relationship between the originals and translations is needed.
-    //   since a thai translation might have come from english, which might have come from japanese, the actual original text,
-    //   the relationship is not straightforward. Each text should point at the other two.
-    // So two hashmaps are built. On both of them, the key is the transifex 'done' url.
-    //   In the first hashmap the value is a copy of the Info structure itself
-    //   In the second hashmap the value is a vector of 'done' urls (other keys) - this is cheap to copy.
-    //   So for a given 'done' url key, we can access it's Info structure and also the related translation projects Info structures.
-
-    // Then for each project, the script will work on it's 'tmp' folder, so the original contents arent touched.
-    // They are actually copied into tmp/original/ folder, to make things simpler.
-    // Then inside tmp/ folder, a folder for each target is created, with the tmp/original/ contents.
-    // So each target may work on the files isolated from other projects and from other targets.
-
-    // TODO: also build the projects that are _local (not transifex related).
-    // TODO: test projects that are translations and are linked to their original language, but aren't finished.
-    //   maybe: basically consider unfinished translations as finished and include the progress info accordingly.
-
     let active_to_langs = consts.all_langs.iter().fold(HashSet::new(), |mut hs, l| {
         if l.to_active {
             hs.insert(&l.to_dir_name);
@@ -339,17 +321,11 @@ fn run() -> Result<()> {
                         info: info,
                     };
 
+                    println!("\ninfo:\n{:?}\n", &dir_info.info);
+
                     return Some(dir_info);
 
                 }).collect::<Vec<_>>();
-
-                // println!("{:?}", dir_infos);
-
-
-                // TODO: also, for later on, also read the original english one (since from-en wont have a "to-en")
-
-                
-                // let dir = fs::read_dir(format!("{}/{}", consts.all_langs_to_dir, &from_dir_name));
 
 
                 Some(dir_infos)
@@ -437,6 +413,22 @@ fn run() -> Result<()> {
             }
         }
 
+        let mut authors: Vec<InfoPerson2> = vec![];
+        println!("authors: <{:?}>", &proj.info.persons);
+        if let &Some(ref persons) = &proj.info.persons {
+            for p in persons {
+                if let &Some(ref rule) = &p.rule {
+                    if rule == "author" {
+                        let person = InfoPerson2{
+                            name: p.identifier.clone().unwrap(),
+                        };
+                        authors.push(person);
+                    }
+                }
+            }
+        }
+        println!("authors: <{:?}>", &authors);
+
         // lang information
         let all_langs = consts.all_langs.clone();
         let (def_lang, other_langs) : (Vec<Lang>, Vec<Lang>) =
@@ -452,8 +444,25 @@ fn run() -> Result<()> {
                 .map_err(|e| format!("Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.", 
                     &proj.fulldir_str(), &proj.fulldir_str(), target.name, e))?;
             
-            // TODO: resize the cover images
             println!("target: <{:?}>", target);
+            // TODO: crop and/or resize the cover images, and replace them
+
+            for cover in &target.covers {
+                let img_filepath = format!("{}/{}", &destination, cover.cover_file);
+                let mut crop;
+                {
+                    let mut img = image::open(&img_filepath)
+                        .map_err(|e| format!("Error when opening image file from {}. Due to {}.", &img_filepath, e))?;
+                    let (offsetx, offsety) = (cover.cover_dimensions[0], cover.cover_dimensions[1]);
+                    let (width, height) = img.dimensions();
+                    let width = if cover.cover_dimensions[2] == 0 {width - offsetx} else {cover.cover_dimensions[2]};
+                    let height = if cover.cover_dimensions[3] == 0 {height - offsety} else {cover.cover_dimensions[3]};
+                    // TODO: add paper proportion measure, so we can crop exceding width or exceding height
+                    crop = imageops::crop(&mut img, offsetx, offsety, width, height).to_image();
+                }
+                crop.save(&img_filepath)
+                    .map_err(|e| format!("Error when saving image file to {}. Due to {}.", &img_filepath, e))?;
+            }
             
             println!("Next file is <{}>, for the target <{}>. continue? [Y/n] ", &proj.fulldir_str(), &target.name);
             
@@ -583,7 +592,7 @@ fn run() -> Result<()> {
 
             // let authors = proj.info.persons_id.iter().
             let info2 = Info2 {
-                authors: vec![],
+                authors: authors.clone(),
                 translators: vec![],
                 collaborators: vec![],
                 thanks: vec![],

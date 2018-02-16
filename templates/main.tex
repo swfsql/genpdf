@@ -5,10 +5,12 @@
 % https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
 
 {% if target == "book"  %}
-\documentclass{book}%
+\documentclass[a4paper]{book}%
 {% elif target == "article"  %}
 \documentclass{article}%
 {% endif %}
+
+\usepackage{geometry}
 
 % info.target.reset_footer_active
 % info.target.reset_footer_depth: 0

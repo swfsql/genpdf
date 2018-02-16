@@ -8,7 +8,9 @@
 {% endmacro titles %}
 
 {% macro authors(authors) %}
-    \begin{varwidth}{->.98\textwidth}\Large{\textsc{->{{ authors | join(sep=" \&~") }}.}}\end{varwidth};
+    {% for author in authors %}
+        \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{author.name}}}}\endgroup
+    {% endfor %}
 {% endmacro authors %}
 
 

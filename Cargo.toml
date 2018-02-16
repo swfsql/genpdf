@@ -24,6 +24,7 @@ imgui = { version = "0.0.19-pre", path = "../imgui-rs/" }
 imgui-gfx-renderer = { version = "0.0.19-pre", path = "../imgui-rs/imgui-gfx-renderer" }
 imgui-glium-renderer = { version = "0.0.19-pre", path = "../imgui-rs/imgui-glium-renderer" }
 imgui-sys = { version = "0.0.19-pre", path = "../imgui-rs/imgui-sys", features = ["gfx", "glium"] }
+image = "0.18.0"
 
 # for thai language
 #chamkho = "0.1.0"

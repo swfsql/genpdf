@@ -1,6 +1,6 @@
 min_ver: "0.1.3"
 
-passages: 3
+passages: 2 # minimum of 2 is needed to the cover and summary and footnotes to get alright
 cover_nodes: [page, title, author, translator, dummy]
 
 all_langs_from_dir: "./../crowdin"
