@@ -166,7 +166,10 @@ lazy_static! {
     pub static ref RE_SYMB_CII: Regex = Regex::new("([^\\[])\\^").unwrap(); 
     pub static ref RE_SYMB_TILDE: Regex = Regex::new("~").unwrap(); 
     pub static ref RE_SYMB_BSLASH: Regex = Regex::new("\\\\").unwrap(); 
-    pub static ref RE_SYMB_A: Regex = Regex::new("a").unwrap(); 
+    pub static ref RE_SYMB_FI: Regex = Regex::new("fi").unwrap(); 
+    pub static ref RE_CHAR_I_DOTLESS: Regex = Regex::new("I").unwrap(); 
+    pub static ref RE_CHAR_i_DOTTED: Regex = Regex::new("i").unwrap(); 
+    pub static ref RE_CHAR_DOT_DOT: Regex = Regex::new("̇̇").unwrap(); // two consecutive dots (from dotted i̇i̇)
 
     // temporary
     pub static ref RE_SYMB_UNDERSCORE: Regex = Regex::new("_").unwrap(); 
@@ -488,9 +491,16 @@ fn run() -> Result<()> {
                 s = format!("\n{}\n", s); // adds new line around each file
                 // so headers on top of files won't break
 
+
+
                 //s = RE_TEST_A.replace_all(&s, "b").to_string(); // test
 
                 s = RE_SYMB_BSLASH.replace_all(&s, "\\textbackslash ").to_string();
+                if proj.info.translation.language == "tr" {
+                    s = RE_SYMB_FI.replace_all(&s, "f\\/i").to_string();
+                    s = RE_CHAR_i_DOTTED.replace_all(&s, "i̇").to_string();
+                    s = RE_CHAR_DOT_DOT.replace_all(&s, "̇").to_string();
+                }
                 // s = RE_SYMB_CURLY_BRACK.replace_all(&s, "\\{").to_string(); // TODO
                 // s = RE_SYMB_CURLY_BRACK2.replace_all(&s, "\\}").to_string(); // TODO
                 // TODO underline...
@@ -501,6 +511,7 @@ fn run() -> Result<()> {
                 s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
                 s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
                 s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
+
 
                 let mut do_section_clear = |line: &str| {
                     let depth = line.chars().take_while(|&c| c == '#').count();
