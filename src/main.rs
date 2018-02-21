@@ -46,7 +46,7 @@ use regex::Regex;
 //use walkdir::WalkDir;
 //use log::Level;
 
-// use std::collections::HashMap;
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use std::process::Command;
@@ -165,11 +165,19 @@ lazy_static! {
     pub static ref RE_SYMB_HASH: Regex = Regex::new("([^#\n])#").unwrap(); 
     pub static ref RE_SYMB_CII: Regex = Regex::new("([^\\[])\\^").unwrap(); 
     pub static ref RE_SYMB_TILDE: Regex = Regex::new("~").unwrap(); 
+    pub static ref RE_SYMB_DOT_4: Regex = Regex::new("::::").unwrap(); 
+    pub static ref RE_SYMB_COLON_2: Regex = Regex::new("^::(.*?)::$").unwrap(); 
+    pub static ref RE_SYMB_COLON_2_INLINE: Regex = Regex::new("::(.*?)::").unwrap(); 
     pub static ref RE_SYMB_BSLASH: Regex = Regex::new("\\\\").unwrap(); 
     pub static ref RE_SYMB_FI: Regex = Regex::new("fi").unwrap(); 
     pub static ref RE_CHAR_I_DOTLESS: Regex = Regex::new("I").unwrap(); 
     pub static ref RE_CHAR_i_DOTTED: Regex = Regex::new("i").unwrap(); 
     pub static ref RE_CHAR_DOT_DOT: Regex = Regex::new("̇̇").unwrap(); // two consecutive dots (from dotted i̇i̇)
+    pub static ref RE_CHAR_CJK_COLON: Regex = Regex::new("([^\\d+])：").unwrap(); 
+    pub static ref RE_PATT_FOOT_DEF: Regex = Regex::new("^\\[\\^\\d+\\]:").unwrap(); 
+    pub static ref RE_PATT_FOOT_DEF_CONT: Regex = Regex::new("^    ").unwrap(); 
+    
+
 
     // temporary
     pub static ref RE_SYMB_UNDERSCORE: Regex = Regex::new("_").unwrap(); 
@@ -385,6 +393,63 @@ fn run() -> Result<()> {
         Ok(())
     }
 
+    fn chk_footnote_proj(proj: &DirInfo, original: &DirInfo) -> Result<Option<Vec<usize>>> {
+
+        let count_foots = |dir: &DirInfo| {
+            let ret = dir.info.content_files
+                .iter()
+                .map(|vs| vs[0].clone())
+                .map(|md| {
+                    let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).unwrap();
+                    let mut contents = String::new();
+                    file.read_to_string(&mut contents).unwrap();
+
+                    // TODO: try using scan again >_> damn you lifetimes
+                    let mut foots = vec![];
+                    let mut foot = false;
+                    for line in contents.lines().map(|line| line.trim()).filter(|line| line.len() != 0) {
+                        let line = RE_SYMB_DOT_4.replace_all(&line, "    ").to_string();
+                        // println!("{}", &line[0..2]); // may panic
+                        if RE_PATT_FOOT_DEF.is_match(&line) {
+                            foots.push(1u8);
+                            foot = true;
+                        } else if foot && RE_PATT_FOOT_DEF_CONT.is_match(&line) {
+                            let len = foots.len();
+                            foots[len - 1] += 1u8;
+                        } else {
+                            foot = false;
+                        }
+                    }
+                    foots
+                })
+                .collect::<Vec<Vec<_>>>();
+            println!("foots: <{:?}>", &ret);
+            ret
+        };
+        let diff_pos = count_foots(original).iter()
+            .zip(count_foots(proj))
+            .enumerate()
+            .inspect(|&(index, (ref foots_a, ref foots_b))| {
+                println!(" {}:", index);
+                foots_a.iter()
+                    .zip(foots_b)
+                    .inspect(|&(num_a, num_b)| {
+                        let diff = if num_a != num_b {" ~"} else {""};
+                        println!("  {} == {}{}", num_a, num_b, diff);
+                    })
+                    .collect::<Vec<_>>();
+
+            })
+            .filter(|&(_index, (ref foots_a, ref foots_b))| {
+                foots_a.iter()
+                    .zip(foots_b)
+                    .any(|(num_a, num_b)| num_a != num_b)
+            })
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        let diff_pos = if diff_pos.is_empty() {None} else {Some(diff_pos)};
+        Ok(diff_pos)
+    }
 
     fn gen_proj(proj: &DirInfo, consts: &Consts) -> Result<()> {
         info!("Working on project: {:?}\n", &proj);
@@ -475,6 +540,10 @@ fn run() -> Result<()> {
                 else {false};
             let mut sec_active = vec![false; 10];
 
+            // let initial_rank = 
+            // "ABCDEFGHIJKLMNOPQRSTUVWZ" // ZallmanI
+            // "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÔÕÖŒÙÚÛÜ" // AM Intex
+
             // substitute content characters
             for content in proj.info.content_files.iter().map(|c| &c[0]) {
                 let path = format!("{}/{}", &destination, &content);
@@ -510,7 +579,12 @@ fn run() -> Result<()> {
                 s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
                 s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
                 s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
+                s = RE_SYMB_DOT_4.replace_all(&s, "    ").to_string();
                 s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
+                s = RE_CHAR_CJK_COLON.replace_all(&s, "$1:").to_string();
+                s = RE_SYMB_COLON_2.replace_all(&s, "$$$1$$").to_string();
+                s = RE_SYMB_COLON_2_INLINE.replace_all(&s, "$$1$").to_string();
+                // TODO: normalize previous replacements inside math-mode
 
 
                 let mut do_section_clear = |line: &str| {
@@ -537,7 +611,7 @@ fn run() -> Result<()> {
                     }
                 };
 
-                let mut do_initial = |line: &str, start: &str| {
+                let mut do_initial = |line: &str, start: &str, inis: &mut Vec<String>| {
                     if line.starts_with(start) {
                         initial = true;
                         line.to_string()
@@ -558,6 +632,7 @@ fn run() -> Result<()> {
                             let line_start_end: String = initials.chars().skip(1).collect();
                             let line_start = format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
                             let line_end: String = line.chars().skip(initials.chars().count()).collect();
+                            inis.push(line_start_start);
                             
                             format!("{}{}", line_start, line_end)
 
@@ -568,10 +643,11 @@ fn run() -> Result<()> {
                 };
 
                 // initial
+                let mut initials = vec![];
                 if target.name == "article" {
-                    s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();
+                    s = s.lines().map(|line| do_initial(&line, &"# ", &mut initials) + "\n").collect::<String>();
                 } else if target.name == "book" {
-                    s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
+                    s = s.lines().map(|line| do_initial(&line, &"## ", &mut initials) + "\n").collect::<String>();
                 }
 
                 // section clearing (new page, reset footer)
@@ -579,11 +655,11 @@ fn run() -> Result<()> {
                     s = s.lines().map(|line| do_section_clear(&line) + "\n").collect::<String>();
                 }
                 
-                if target.name == "article" {
-                    s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();
-                } else if target.name == "book" {
-                    s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
-                }
+                // if target.name == "article" {
+                //     s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();
+                // } else if target.name == "book" {
+                //     s = s.lines().map(|line| do_initial(&line, &"## ") + "\n").collect::<String>();
+                // }
 
                 // temporary
                 s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();
@@ -778,6 +854,110 @@ fn run() -> Result<()> {
                             }
                         }
                     }
+                    if ui.small_button(im_str!("Check footnotes")) {
+                        let originals:HashMap<String,DirInfo> = dirs_by_lang.iter().cloned()
+                            // .inspect(|&(ref lan, ref ds)| {
+                            //     ds.iter().cloned()
+                            //     .inspect(|d| {
+                            //         println!("<{}> == <{}>", 
+                            //             &d.0.from_dir,
+                            //             &format!("from_{}", lan)
+                            //         );
+                            //     })
+                            //     .collect::<Vec<_>>();
+                            // })
+                            .map(|(lan, ds)| 
+                                (
+                                    lan.clone(), 
+                                    ds.iter().cloned()
+                                        .filter(|d| &d.0.from_dir == &format!("from_{}", lan))
+                                        .collect::<Vec<_>>()
+                                )
+                            )
+                            .fold(HashMap::new(), |mut acc, (ref lan, ref ds)| {
+                                for &(ref d, _) in ds {
+                                    println!("insert: <{}>", format!("from_{}_{}", lan, d.proj_dir));
+                                    acc.insert(format!("from_{}_{}", lan, d.proj_dir), d.clone());
+                                }
+                                acc
+                            });
+                        let chk_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
+                            .map(|(lan, d)| d)
+                            .fold(vec![], |mut acc, ref vo12| {
+                                let chk_dirs = vo12.iter()
+                                    .filter_map(|&(ref dir, checked): &(DirInfo, bool)| 
+                                        if checked {
+                                            Some(dir.clone())
+                                        } 
+                                        else {None})
+                                    .collect::<Vec<DirInfo>>();
+                                acc.extend(chk_dirs);
+                                acc
+                            });
+
+                        // println!("{:?}", originals);
+                        // let dir_res = chk_d.par_iter()
+                        let dir_res = chk_d.iter()
+                            .map(|proj| {
+                                println!("getting: <{}>", &format!("{}_{}", proj.from_dir, proj.proj_dir));
+
+                                (
+                                    proj, 
+                                    chk_footnote_proj(&proj, 
+                                        originals.get(&format!("{}_{}", proj.from_dir, proj.proj_dir)).unwrap()
+                                    )
+                                )
+                            }
+                            )
+                            .inspect(|&(ref proj, ref res)| 
+                                if let &Err(_) = res {
+                                    println!("\npeek err: <{}>~~~~~~~~~~\n", proj.fulldir_str());
+                                } 
+                                else if let &Ok(Some(ref pos)) = res {
+                                    println!("\npeek foot diff: <{}>~~~~~~~~~~\n-at contents {:?}", 
+                                        proj.fulldir_str(),
+                                        pos);
+                                }
+                            )
+                            .filter(|&(_, ref res)| if let &Err(_) = res {true} else {false})
+                            .collect::<Vec<(_, Result<_>)>>();
+                        println!("Projects that err:\n");
+                        for (proj, _res) in dir_res {
+                            println!("err: <{}>", proj.fulldir_str());
+                        }
+
+                    } else 
+                    if ui.small_button(im_str!("Test selected (cover + 3 files)")) {
+                        let chk_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
+                            .map(|(lan, d)| d)
+                            .fold(vec![], |mut acc, ref vo12| {
+                                let chk_dirs = vo12.iter()
+                                    .filter_map(|&(ref dir, checked): &(DirInfo, bool)| 
+                                        if checked {
+                                            let mut dc = dir.clone();
+                                            dc.info.content_files = dc.info.content_files.into_iter().take(3).collect();
+                                            Some(dc)
+                                            } 
+                                        else {None})
+                                    .collect::<Vec<DirInfo>>();
+                                acc.extend(chk_dirs);
+                                acc
+                            });
+
+                        // let dir_res = chk_d.par_iter()
+                        let dir_res = chk_d.iter()
+                            .map(|proj| (proj, gen_proj(&proj, &consts)))
+                            .inspect(|&(ref proj, ref res)| if let &Err(_) = res {
+                                println!("\npeek err: <{}>~~~~~~~~~~\n", proj.fulldir_str());
+                            } )
+                            .filter(|&(_, ref res)| if let &Err(_) = res {true} else {false})
+                            .collect::<Vec<(_, Result<_>)>>();
+                        println!("Projects that err:\n");
+                        for (proj, _res) in dir_res {
+                            println!("err: <{}>", proj.fulldir_str());
+                        }
+
+                    } else 
                     if ui.small_button(im_str!("Run selected")) {
                         let chk_d:Vec<DirInfo> = dirs_by_lang.iter().cloned()
                             .map(|(lan, d)| d)
@@ -793,12 +973,17 @@ fn run() -> Result<()> {
 
                         // let dir_res = chk_d.par_iter()
                         let dir_res = chk_d.iter()
-                            .map(|proj| gen_proj(proj, &consts))
-                            .filter(|res| if let &Err(_) = res {true} else {false})
-                            .collect::<Vec<Result<_>>>();
-                        for res in dir_res {
-                            println!("DIR ERROR: {:?}", res);
+                            .map(|proj| (proj, gen_proj(&proj, &consts)))
+                            .inspect(|&(ref proj, ref res)| if let &Err(_) = res {
+                                println!("\npeek err: <{}>~~~~~~~~~~\n", proj.fulldir_str());
+                            } )
+                            .filter(|&(_, ref res)| if let &Err(_) = res {true} else {false})
+                            .collect::<Vec<(_, Result<_>)>>();
+                        println!("Projects that err:\n");
+                        for (proj, _res) in dir_res {
+                            println!("err: <{}>", proj.fulldir_str());
                         }
+
 
                     } else 
                     if ui.small_button(im_str!("Clear all")) {
