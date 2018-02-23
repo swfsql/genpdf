@@ -59,9 +59,26 @@
 
 
 
+% \usepackage{xepersian}
+% \defpersianfont\nastaligh[Language=Default]{IranNastaliq}
+% \renewcommand{\LettrineFontHook}{\nastaligh\color{red}}
+
+% https://ctan.org/pkg/xecyr % Using Cyrillic languages in XeTeX
+% https://ctan.org/pkg/xgreek % XeLaTeX package for typesetting Greek language documents (beta release)
+
+
+
 \usepackage{lettrine}
 
-\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=.115,#1]{->#2}{->#3}}
+
+{% if sent_initial == "Zallman"  %}
+\input Zallman.fd
+\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
+\renewcommand{\LettrineFontHook}{\initialsfamily}
+{% else %}
+{% endif %}
+
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=.115,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
 
 % \newfont{\initial}{wcmr17 at 48pt}
 % \newcommand{\frstltr}[1]{

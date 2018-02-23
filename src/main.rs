@@ -48,6 +48,7 @@ use regex::Regex;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::iter::FromIterator;
 
 use std::process::Command;
 //use std::ffi::OsStr;
@@ -141,6 +142,7 @@ struct Consts {
     all_langs_from_dir: String,
     all_langs_to_dir: String,
     output_dir: String,
+    initials: Vec<VS>,
     num_cpu: u8,
     all_langs: Vec<Lang>,
 }
@@ -201,6 +203,8 @@ struct Defaults {
     info2: Info2,
     target: String,
     info_target: InfoTarget,
+
+    sent_initial: String,
 
     all_langs: Vec<Lang>,
     def_lang: Lang,
@@ -538,11 +542,19 @@ fn run() -> Result<()> {
                 if target.name == "article" {false} 
                 else if target.name == "book" {true}
                 else {false};
+            let mut skip_initial = false;
             let mut sec_active = vec![false; 10];
 
             // let initial_rank = 
             // "ABCDEFGHIJKLMNOPQRSTUVWZ" // ZallmanI
             // "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÔÕÖŒÙÚÛÜ" // AM Intex
+
+
+            // initial
+            let mut used_initials = vec![];
+            let initials = consts.initials.iter()
+                .map(|vs| HashSet::from_iter(vs[1].chars()))
+                .collect::<Vec<HashSet<_>>>();
 
             // substitute content characters
             for content in proj.info.content_files.iter().map(|c| &c[0]) {
@@ -582,8 +594,8 @@ fn run() -> Result<()> {
                 s = RE_SYMB_DOT_4.replace_all(&s, "    ").to_string();
                 s = RE_SYMB_TILDE.replace_all(&s, "\\textasciitilde{}").to_string();
                 s = RE_CHAR_CJK_COLON.replace_all(&s, "$1:").to_string();
-                s = RE_SYMB_COLON_2.replace_all(&s, "$$$1$$").to_string();
-                s = RE_SYMB_COLON_2_INLINE.replace_all(&s, "$$1$").to_string();
+                s = RE_SYMB_COLON_2.replace_all(&s, "$$$ $1 $$$").to_string(); // $1$ ::X:: 
+                s = RE_SYMB_COLON_2_INLINE.replace_all(&s, "$$ $1 $$").to_string();
                 // TODO: normalize previous replacements inside math-mode
 
 
@@ -611,16 +623,17 @@ fn run() -> Result<()> {
                     }
                 };
 
-                let mut do_initial = |line: &str, start: &str, inis: &mut Vec<String>| {
+                let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
                     if line.starts_with(start) {
                         initial = true;
+                        skip_initial = false;
                         line.to_string()
                     } 
                     else if line.starts_with("#") {
-                        initial = false;
+                        skip_initial = true;
                         line.to_string()
                     }
-                    else if initial {
+                    else if initial && !skip_initial {
                         if line.trim() == "" {
                             line.to_string()
                         } else {
@@ -632,22 +645,25 @@ fn run() -> Result<()> {
                             let line_start_end: String = initials.chars().skip(1).collect();
                             let line_start = format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
                             let line_end: String = line.chars().skip(initials.chars().count()).collect();
-                            inis.push(line_start_start);
+                            inis.push(line_start_start.chars().next().unwrap());
                             
                             format!("{}{}", line_start, line_end)
 
                         }
                     } else {
+                        skip_initial = false;
                         line.to_string()
                     }
                 };
 
-                // initial
-                let mut initials = vec![];
                 if target.name == "article" {
-                    s = s.lines().map(|line| do_initial(&line, &"# ", &mut initials) + "\n").collect::<String>();
+                    s = s.lines()
+                        .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
+                        .collect::<String>();
                 } else if target.name == "book" {
-                    s = s.lines().map(|line| do_initial(&line, &"## ", &mut initials) + "\n").collect::<String>();
+                    s = s.lines()
+                        .map(|line| do_initial(&line, &"## ", &mut used_initials) + "\n")
+                        .collect::<String>();
                 }
 
                 // section clearing (new page, reset footer)
@@ -662,7 +678,7 @@ fn run() -> Result<()> {
                 // }
 
                 // temporary
-                s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();
+                // s = RE_SYMB_UNDERSCORE.replace_all(&s, "*").to_string();
                 
                 // s2 = "".into(); // loop
                 // while s2 != s {
@@ -675,6 +691,13 @@ fn run() -> Result<()> {
 
 
             }
+
+            let used_initials_hs: HashSet<char> = HashSet::from_iter(used_initials);
+            let sent_initial = if let Some(pos) = initials.iter().position(|best| best.is_superset(&used_initials_hs)) {
+                &consts.initials[pos][0]
+            } else {
+                ""
+            };
 
 
             // let authors = proj.info.persons_id.iter().
@@ -690,6 +713,8 @@ fn run() -> Result<()> {
                 info2: info2.clone(),
                 target: target.name.clone(),
                 info_target: target.clone(),
+                //
+                sent_initial: sent_initial.to_string(),
                 //
                 all_langs: all_langs.clone(),
                 def_lang: def_lang.clone(),

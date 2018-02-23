@@ -7,6 +7,10 @@ all_langs_from_dir: "./../crowdin"
 all_langs_to_dir: "./../crowdin_l10n_master"
 output_dir: "./../utopian_outputs"
 
+initials:
+  - [Zallman, "ABCDEFGHIJKLMNOPQRSTUVWZ"]
+  # - [AM Intex , "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÔÕÖŒÙÚÛÜ"] # TODO
+
 num_cpu: 2
 
 # activated (from), activated (to), folder name (to), crowdin title (to), crowdin url (from), folder name (from)
