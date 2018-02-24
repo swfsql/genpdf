@@ -19,8 +19,6 @@
 % info.target.clear_page_depth: 1
 
 
-\def \endsec {\utfboxraw\clearpage}
-\def \endfoot {\setcounter{footnote}{0}}
 
 
 {% include "preamble/lang.tex" %}
@@ -31,6 +29,9 @@
 \def \utfboxraw {\hfill\color{black!20} □\color{black}}
 \def \utfbox {\nopagebreak\utfboxraw}
 \def \texthash {\#}
+
+\def \endsec {\utfbox\clearpage}
+\def \endfoot {\setcounter{footnote}{0}}
 
 \setcounter{tocdepth}{->{{ info_target.toc_depth }}}
 

@@ -424,17 +424,17 @@ fn run() -> Result<()> {
                             foot = false;
                         }
                     }
-                    foots
+                    (md, foots)
                 })
-                .collect::<Vec<Vec<_>>>();
+                .collect::<Vec<(_, Vec<_>)>>();
             println!("foots: <{:?}>", &ret);
             ret
         };
         let diff_pos = count_foots(original).iter()
             .zip(count_foots(proj))
             .enumerate()
-            .inspect(|&(index, (ref foots_a, ref foots_b))| {
-                println!(" {}:", index);
+            .inspect(|&(index, (&(ref md, ref foots_a), (_, ref foots_b)))| {
+                println!(" {}: [{}]", index, md);
                 foots_a.iter()
                     .zip(foots_b)
                     .inspect(|&(num_a, num_b)| {
@@ -444,7 +444,7 @@ fn run() -> Result<()> {
                     .collect::<Vec<_>>();
 
             })
-            .filter(|&(_index, (ref foots_a, ref foots_b))| {
+            .filter(|&(_index, (&(ref md, ref foots_a), (_, ref foots_b)))| {
                 foots_a.iter()
                     .zip(foots_b)
                     .any(|(num_a, num_b)| num_a != num_b)
