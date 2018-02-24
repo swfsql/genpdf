@@ -43,7 +43,8 @@
 %\usepackage[hybrid]{markdown}
 \markdownSetup{
 	rendererPrototypes={
-    	link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+    	link = {(links nor wotking for now)}
+    	% link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
 	},
 	renderers = {
 		olItemWithNumber = {\item},
@@ -55,7 +56,7 @@
 \usepackage[hidelinks]{hyperref}
 
 
-%\usepackage[protrusion=true,final]{microtype}
+\usepackage[protrusion=true,final]{microtype}
 
 
 
@@ -78,7 +79,8 @@
 {% else %}
 {% endif %}
 
-\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=.115,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
+% prev loversize: +0.115
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
 
 % \newfont{\initial}{wcmr17 at 48pt}
 % \newcommand{\frstltr}[1]{

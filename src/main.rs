@@ -645,7 +645,10 @@ fn run() -> Result<()> {
                             let line_start_end: String = initials.chars().skip(1).collect();
                             let line_start = format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
                             let line_end: String = line.chars().skip(initials.chars().count()).collect();
-                            inis.push(line_start_start.chars().next().unwrap());
+                            println!("line start start: <{:?}>", &line_start_start);
+                            if let Some(c) = line_start_start.chars().next() {
+                                inis.push(c);
+                            }
                             
                             format!("{}{}", line_start, line_end)
 
