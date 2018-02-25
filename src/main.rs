@@ -654,6 +654,7 @@ fn run() -> Result<()> {
 
 
                 let mut do_section_clear = |line: &str| {
+                    println!("Debug line:\n{}", &line);
                     let depth = line.chars().take_while(|&c| c == '#').count();
                     if depth == 0 {
                         // line.to_string()
