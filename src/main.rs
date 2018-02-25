@@ -97,18 +97,26 @@ struct InfoCover {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 struct InfoTarget {
     name: String,
+    size: String,
+    reader: String,
     reset_footer_active: bool,
     reset_footer_depth: u8,
     clear_page_active: bool,
     clear_page_depth: u8,
+    has_parts: bool,
+    frontmatter_depth: u8,
     toc_depth: u8,
+    mini_toc_active: bool,
+    mini_toc_depth: u8,
+    mini_toc_sec_active: bool,
+    mini_toc_sec_depth: u8,
     covers: Vec<InfoCover>,
 }
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 struct Info {
-    content_files: Vec<VS>,
+    version: String,
     translation: InfoTranslation,
     titles: VS,
     discussions: Option<Vec<VS>>,
@@ -118,7 +126,7 @@ struct Info {
     persons: Option<Vec<InfoPerson>>,
     resources: Option<Vec<InfoResource>>,
     targets: Vec<InfoTarget>,
-    version: String,
+    content_files: Vec<VS>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -158,6 +166,7 @@ lazy_static! {
         Regex::new("\\{->|\\{-&gt;").unwrap(); // some macros may output -> as {-&gt;
 
     pub static ref RE_SUB_HASH_SPACE_HASH: Regex = Regex::new("# #").unwrap(); 
+    pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$").unwrap(); 
 
     pub static ref RE_SYMB_AMPER: Regex = Regex::new("&").unwrap(); 
     pub static ref RE_SYMB_DOLLAR: Regex = Regex::new("\\$").unwrap(); 
@@ -178,9 +187,11 @@ lazy_static! {
     pub static ref RE_CHAR_CJK_COLON: Regex = Regex::new("([^\\d+])：").unwrap(); 
     pub static ref RE_PATT_FOOT_DEF: Regex = Regex::new("^\\[\\^\\d+\\]:").unwrap(); 
     pub static ref RE_PATT_FOOT_DEF_CONT: Regex = Regex::new("^    ").unwrap(); 
+
+    // pub static ref RE_PATT_HASH_BEFORE_UTFBOX: Regex = Regex::new("(#.*\\n)\\n\\\\utfbox").unwrap(); 
+    // pub static ref RE_PATT_PART_BEFORE_UTFBOX: Regex = Regex::new("(\\\\part\\{.*\\}\\n)\\n\\\\utfbox").unwrap(); 
+    // pub static ref RE_PATT_WHITE_BEFORE_UTFBOX: Regex = Regex::new("\\s*\\\\utfbox").unwrap(); 
     
-
-
     // temporary
     pub static ref RE_SYMB_UNDERSCORE: Regex = Regex::new("_").unwrap(); 
 }
@@ -555,10 +566,19 @@ fn run() -> Result<()> {
             let initials = consts.initials.iter()
                 .map(|vs| HashSet::from_iter(vs[1].chars()))
                 .collect::<Vec<HashSet<_>>>();
+            
+            // utfbox, endsecs and resetfoots
+            let mut box_clear_foot = vec![];
+            
+            // let mut s_all = String::new();
+            // let path_all = format!("{}/all.tex", &destination);
+            // let mut file_all = File::open(&path_all)
+            //     .map_err(|e| format!("failed to open content file to replace by regex. Error: {:?}. Path: <{}>", e, &path_all))?;
 
             // substitute content characters
-            for content in proj.info.content_files.iter().map(|c| &c[0]) {
+            for (index, content) in proj.info.content_files.iter().map(|c| &c[0]).enumerate() {
                 let path = format!("{}/{}", &destination, &content);
+                box_clear_foot.push((false, false, false));
 
                 let mut file = File::open(&path)
                     .map_err(|e| format!("failed to open content file to replace by regex. Error: {:?}. Path: <{}>", e, &path))?;
@@ -589,6 +609,40 @@ fn run() -> Result<()> {
                 s = RE_SYMB_DOLLAR.replace_all(&s, "\\${}").to_string();
                 s = RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
                 s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
+                if target.has_parts {
+                    println!("start to test part!");
+                    // s = RE_SUB_HASH_DOWNGRADE.replace_all(&s, "##").to_string();
+                    // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$").unwrap(); 
+                    s = s.lines().map(|ref line| {
+                        let caps = RE_SUB_HASH_DOWNGRADE.captures(&line);
+                        if let None = caps {
+                            return line.to_string() + "\n";
+                        }
+                        let caps = caps.unwrap();
+                        if let None = caps.get(0) {
+                            return line.to_string() + "\n";
+                        }
+                        let c1 = caps.get(1).map_or("", |c| c.as_str().clone());
+                        let c2 = caps.get(2).map_or("", |c| c.as_str().clone());
+                        if c1.chars().count() > 0 {
+                            return format!("{}{}", c1.clone(), c2.clone()).to_string() + "\n";
+                        } else {
+                            println!("found a part!");
+                            if target.clear_page_active {
+                                box_clear_foot[index - 1].0 = true;
+                                box_clear_foot[index - 1].1 = true;
+                                for i in 0..9 {
+                                    sec_active[i] = false;
+                                }
+                            }
+                            if target.reset_footer_active {
+                                box_clear_foot[index - 1].2 = true;
+                            }
+                            return format!("\\part{{{}}}", c2.clone()).clone() + "\n";
+                        }
+                    }).collect::<String>();
+                    println!("finished to test part!");
+                }
                 s = RE_SYMB_HASH.replace_all(&s, "$1\\texthash{}").to_string();
                 s = RE_SYMB_CII.replace_all(&s, "$1\\textasciicircum{}").to_string();
                 s = RE_SYMB_DOT_4.replace_all(&s, "    ").to_string();
@@ -602,26 +656,36 @@ fn run() -> Result<()> {
                 let mut do_section_clear = |line: &str| {
                     let depth = line.chars().take_while(|&c| c == '#').count();
                     if depth == 0 {
-                        line.to_string()
+                        // line.to_string()
                     } else {
                         for i in depth..9 {
                             sec_active[i] = false;
                         }
                         if sec_active[depth - 1] {
-                            let mut line_start: String = "".into();
-                            if target.reset_footer_active && depth <= target.reset_footer_depth as usize {
-                                line_start += "\\endfoot";
-                            }
-                            if target.clear_page_active && depth <= target.clear_page_depth as usize {
-                                line_start += "\\endsec";
+                            // let line_start: String = "".into();
+                            if target.clear_page_active && depth <= target.clear_page_depth as usize{
+                                if target.has_parts && depth - 1 == 0 {
+                                    box_clear_foot[index - 1].0 = true;
+                                    // line_start += "\\utfbox";
+                                } else {
+                                    box_clear_foot[index - 1].0 = true;
+                                    box_clear_foot[index - 1].1 = true;
+                                    // line_start += "\\utfbox\\clearpage";
+                                }
                             };
-                            format!("{}\n\n{}", &line_start, line.to_string())
+                            if target.reset_footer_active && depth <= target.reset_footer_depth as usize {
+                                box_clear_foot[index - 1].2 = true;
+                                // line_start += "\\endfoot";
+                            }
+                            // format!("{}\n\n{}", &line_start, line.to_string())
                         } else {
                             sec_active[depth - 1] = true;
-                            line.to_string()
+                            // line.to_string()
                         }
                     }
+                    ()
                 };
+                println!("finished endfoot and endsec insertions");
 
                 let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
                     if line.starts_with(start) {
@@ -665,13 +729,13 @@ fn run() -> Result<()> {
                         .collect::<String>();
                 } else if target.name == "book" {
                     s = s.lines()
-                        .map(|line| do_initial(&line, &"## ", &mut used_initials) + "\n")
+                        .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
                         .collect::<String>();
                 }
 
                 // section clearing (new page, reset footer)
                 if target.reset_footer_active || target.clear_page_active {
-                    s = s.lines().map(|line| do_section_clear(&line) + "\n").collect::<String>();
+                    s.lines().map(|line| do_section_clear(&line)).collect::<()>();
                 }
                 
                 // if target.name == "article" {
@@ -689,11 +753,45 @@ fn run() -> Result<()> {
                 //     s = RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
                 // }
 
+                // s_all = format!("{}{}", &s_all, &s);
+                // s_all = RE_PATT_HASH_BEFORE_UTFBOX.replace_all(&s_all, "\\utfbox\n$1").to_string();
+                // s_all = RE_PATT_WHITE_BEFORE_UTFBOX.replace_all(&s_all, "\\utfbox").to_string();
+
+
+                // file_all.write_all(s_all.as_bytes())
+                //     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
+
                 file.write_all(s.as_bytes())
                     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
 
 
             }
+
+            // repalce every file to add footnote reset, the end of chapter box and clearpage information
+            for (content, box_clear_foot) 
+            in proj.info.content_files.iter()
+                .map(|c| &c[0])
+                .zip(box_clear_foot.iter()) {
+                let path = format!("{}/{}", &destination, &content);
+
+                let mut file = File::open(&path)
+                    .map_err(|e| format!("failed to open content file to replace by regex. Error: {:?}. Path: <{}>", e, &path))?;
+                let mut s = String::new();
+                file.read_to_string(&mut s)
+                    .map_err(|e| format!("failed to read content file to replace by regex. Error: {:?}", e))?;
+                s.trim();
+                
+                let box_s = if box_clear_foot.0 {"\\utfbox"} else {""};
+                let clear_s = if box_clear_foot.1 {"\\clearpage"} else {""};
+                let foot_s = if box_clear_foot.2 {"\\endfoot"} else {""};
+
+                file = File::create(&path)
+                    .map_err(|e| format!("failed to overwrite content file to replace by regex. Error: {:?}", e))?;
+                file.write_all(format!("\n{}{}{}{}\n", s.trim(), foot_s, box_s, clear_s).as_bytes())
+                    .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
+
+            }
+            println!("finished the whole substitutions");
 
             let used_initials_hs: HashSet<char> = HashSet::from_iter(used_initials);
             let sent_initial = if let Some(pos) = initials.iter().position(|best| best.is_superset(&used_initials_hs)) {
@@ -730,10 +828,14 @@ fn run() -> Result<()> {
             //     continue;
             // }
 
+            println!("start rendering");
+
             let mut rendered = TERA.render("main.tex", &def)
                 .chain_err(|| "Failed to render the tex templates")?;
             rendered = RE_FORWARD_ARROW.replace_all(&rendered, "{").to_string(); // }
             debug!("{}", rendered);
+
+            println!("finished rendering");
 
             let mut mdok = File::create(format!("{}/tmp/{}/main_ok.tex", &proj.fulldir_str(), target.name))
                 .chain_err(|| "Falied to create tex file")?;
@@ -975,8 +1077,12 @@ fn run() -> Result<()> {
                         // let dir_res = chk_d.par_iter()
                         let dir_res = chk_d.iter()
                             .map(|proj| (proj, gen_proj(&proj, &consts)))
-                            .inspect(|&(ref proj, ref res)| if let &Err(_) = res {
+                            .inspect(|&(ref proj, ref res)| if let &Err(ref e) = res {
                                 println!("\npeek err: <{}>~~~~~~~~~~\n", proj.fulldir_str());
+                                // println!("\nerr: {:?}\n", &e);
+                                // for ee in e.iter().skip(1) {
+                                //     println!("caused by: {:?}", ee);
+                                // }
                             } )
                             .filter(|&(_, ref res)| if let &Err(_) = res {true} else {false})
                             .collect::<Vec<(_, Result<_>)>>();

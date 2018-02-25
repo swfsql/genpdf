@@ -5,7 +5,11 @@
 % https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
 
 {% if target == "book"  %}
-\documentclass[a4paper]{book}%
+% \documentclass[a4paper]{book}%
+\documentclass[14pt,twoside,openright,a4paper]{memoir}% for print; chars per line = 66~72
+% \documentclass[14pt,twoside,openright,letterpaper]{memoir}% for print; TODO: cpl should be 66~72
+% \documentclass[14pt,oneside,openany,ebook]{memoir}% for computer; TODO: less margin; cpl should be 66~72
+% \documentclass[14pt,oneside,openany,ebook]{memoir}% for mobile; TODO: less margin; cpl should be 45~50
 {% elif target == "article"  %}
 \documentclass{article}%
 {% endif %}
@@ -25,8 +29,9 @@
 
 % shortcuts
 \usepackage{xcolor}
+\usepackage{latexsym}
 % \def \utfbox {\nopagebreak\hfill □}
-\def \utfboxraw {\hfill\color{black!20} □\color{black}}
+\def \utfboxraw {\hfill\color{black!08}$\Box$\color{black}}
 \def \utfbox {\nopagebreak\utfboxraw}
 \def \texthash {\#}
 
@@ -95,14 +100,10 @@
 %     \end{wrapfigure}}
 % \frstltr{Д}олжно работать!
 
-
-
-
 \begin{document}%
 
-% \DECORATE{T}{esting} the thing. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. 
-
-% \DECORATE{T}{esting} the thing. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. The brown fox jumps over the lazy dog. 
+\chapterstyle{thatcher}
+\frontmatter
 
 {% include "cover/cover.tex" %}
 
@@ -114,13 +115,10 @@
 {% endif %}
 
 {% for md in info.content_files %}
-\begin{markdown}
-
-\end{markdown}
+	{% if loop.index0 == info_target.frontmatter_depth %}
+		\mainmatter
+	{% endif %}
 \markdownInput{->{{md.0}}}%
-\begin{markdown}
-
-\end{markdown}
 {% endfor %}
 
 \end{document}
