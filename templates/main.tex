@@ -82,11 +82,12 @@
 \input Zallman.fd
 \newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
 \renewcommand{\LettrineFontHook}{\initialsfamily}
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
 {% else %}
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
 {% endif %}
 
 % prev loversize: +0.115
-\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
 
 % \newfont{\initial}{wcmr17 at 48pt}
 % \newcommand{\frstltr}[1]{
