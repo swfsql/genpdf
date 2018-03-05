@@ -55,6 +55,12 @@
 \renewcommand*{\thefootnoteC}{->%
 \greekfnsymbolmult{\value{footnoteC}}%
 }
-\newcommand{\nota}[1]{\footnoteC{->#1}}
+\newcommand{\trfootnote}[1]{\footnoteC{->#1}}
 \let\oldfootnote\footnote
 \renewcommand{\footnote}[1]{\oldfootnote{->#1\utfbox}}
+
+% anonymous footnote
+\makeatletter
+\def\blfootnote{\xdef\@thefnmark{$ \sim $}\@footnotetext}
+\makeatother
+% https://tex.stackexchange.com/questions/250221/supressing-the-footnote-number

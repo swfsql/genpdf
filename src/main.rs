@@ -166,7 +166,7 @@ lazy_static! {
         Regex::new("\\{->|\\{-&gt;").unwrap(); // some macros may output -> as {-&gt;
 
     pub static ref RE_SUB_HASH_SPACE_HASH: Regex = Regex::new("# #").unwrap(); 
-    pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$").unwrap(); 
+    pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("(?m)^#(#*)([^#]*)$").unwrap(); 
 
     pub static ref RE_SYMB_AMPER: Regex = Regex::new("&").unwrap(); 
     pub static ref RE_SYMB_DOLLAR: Regex = Regex::new("\\$").unwrap(); 
@@ -177,7 +177,7 @@ lazy_static! {
     pub static ref RE_SYMB_CII: Regex = Regex::new("([^\\[])\\^").unwrap(); 
     pub static ref RE_SYMB_TILDE: Regex = Regex::new("~").unwrap(); 
     pub static ref RE_SYMB_DOT_4: Regex = Regex::new("::::").unwrap(); 
-    pub static ref RE_SYMB_COLON_2: Regex = Regex::new("^::(.*?)::$").unwrap(); 
+    pub static ref RE_SYMB_COLON_2: Regex = Regex::new("\n::(.*?)::\n").unwrap(); 
     pub static ref RE_SYMB_COLON_2_INLINE: Regex = Regex::new("::(.*?)::").unwrap(); 
     pub static ref RE_SYMB_BSLASH: Regex = Regex::new("\\\\").unwrap(); 
     pub static ref RE_SYMB_FI: Regex = Regex::new("fi").unwrap(); 
@@ -185,8 +185,11 @@ lazy_static! {
     pub static ref RE_CHAR_i_DOTTED: Regex = Regex::new("i").unwrap(); 
     pub static ref RE_CHAR_DOT_DOT: Regex = Regex::new("̇̇").unwrap(); // two consecutive dots (from dotted i̇i̇)
     pub static ref RE_CHAR_CJK_COLON: Regex = Regex::new("([^\\d+])：").unwrap(); 
-    pub static ref RE_PATT_FOOT_DEF: Regex = Regex::new("^\\[\\^\\d+\\]:").unwrap(); 
-    pub static ref RE_PATT_FOOT_DEF_CONT: Regex = Regex::new("^    ").unwrap(); 
+    pub static ref RE_PATT_FOOT_DEF: Regex = Regex::new("(?m)^\\[\\^\\d+\\]:").unwrap(); 
+    pub static ref RE_PATT_FOOT_ZERO: Regex = Regex::new("(?m)^\\[\\^0\\]: (.*?)$").unwrap(); // zero'th footnote. It's anonymous but required. TODO: support multi-line
+    pub static ref RE_PATT_FOOT_ANON: Regex = Regex::new("(?m)^\\[\\^\\]: (.*?)$").unwrap(); // anon footnote. not original, then not required. TODO: support multi-line
+    pub static ref RE_PATT_FOOT_CHAR: Regex = Regex::new("(?m)^\\[\\^\\D\\]: (.*?)$").unwrap(); // translator footnote. not original, then not required. TODO: support multi-line
+    pub static ref RE_PATT_FOOT_DEF_CONT: Regex = Regex::new("(?m)^    ").unwrap(); 
 
     // pub static ref RE_PATT_HASH_BEFORE_UTFBOX: Regex = Regex::new("(#.*\\n)\\n\\\\utfbox").unwrap(); 
     // pub static ref RE_PATT_PART_BEFORE_UTFBOX: Regex = Regex::new("(\\\\part\\{.*\\}\\n)\\n\\\\utfbox").unwrap(); 
@@ -599,7 +602,7 @@ fn run() -> Result<()> {
                 s = RE_SYMB_BSLASH.replace_all(&s, "\\textbackslash ").to_string();
                 if proj.info.translation.language == "tr" {
                     s = RE_SYMB_FI.replace_all(&s, "f\\/i").to_string();
-                    s = RE_CHAR_i_DOTTED.replace_all(&s, "i̇").to_string();
+                    s = RE_CHAR_i_DOTTED.replace_all(&s, "i̇").to_string(); // TODO: not all is required, just chap names and opening words
                     s = RE_CHAR_DOT_DOT.replace_all(&s, "̇").to_string();
                 }
                 // s = RE_SYMB_CURLY_BRACK.replace_all(&s, "\\{").to_string(); // TODO
@@ -608,7 +611,7 @@ fn run() -> Result<()> {
                 s = RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
                 s = RE_SYMB_DOLLAR.replace_all(&s, "\\${}").to_string();
                 s = RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
-                s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
+                // s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
                 if target.has_parts {
                     println!("start to test part!");
                     // s = RE_SUB_HASH_DOWNGRADE.replace_all(&s, "##").to_string();
@@ -699,7 +702,7 @@ fn run() -> Result<()> {
                         line.to_string()
                     }
                     else if initial && !skip_initial {
-                        if line.trim() == "" {
+                        if line.trim() == "" || line.starts_with("[^") {
                             line.to_string()
                         } else {
                             initial = false;
@@ -738,6 +741,10 @@ fn run() -> Result<()> {
                 if target.reset_footer_active || target.clear_page_active {
                     s.lines().map(|line| do_section_clear(&line)).collect::<()>();
                 }
+
+                s = RE_PATT_FOOT_ZERO.replace_all(&s, "\\blfootnote{$1}\n").to_string(); // 
+                s = RE_PATT_FOOT_ANON.replace_all(&s, "\\blfootnote{$1}\n").to_string(); // 
+                s = RE_PATT_FOOT_CHAR.replace_all(&s, "\\trfootnote{$1}\n").to_string(); // 
                 
                 // if target.name == "article" {
                 //     s = s.lines().map(|line| do_initial(&line, &"# ") + "\n").collect::<String>();

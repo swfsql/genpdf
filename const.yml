@@ -55,7 +55,7 @@ all_langs:
   - [false, true, tr, "turkish", Turkish, "", ""]
   - [false, true, ur-IN, "urdu", Urdu (India), "", ""]
   - [false, true, ur-PK, "urdu", Urdu (Pakistan), "", ""]
-  - [false, false, vi, "vietnamese", Vietnamese, "", ""]
+  - [false, true, vi, "vietnamese", Vietnamese, "", ""]
   - [false, true, yo, "english", Yoruba, "", ""]
   - [false, true, zh-CN, "", Chinese Simplified, "", ""]
 
