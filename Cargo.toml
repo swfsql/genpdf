@@ -16,15 +16,8 @@ walkdir = "1.0.7"
 log = "0.3"
 env_logger = "0.4.3"
 rayon = "0.9"
-gfx = "0.16"
-gfx_window_glutin = "0.19"
-glium = { version = "0.20", default-features = true }
-glutin = "0.11"
-imgui = { version = "0.0.19-pre", path = "../imgui-rs/" }
-imgui-gfx-renderer = { version = "0.0.19-pre", path = "../imgui-rs/imgui-gfx-renderer" }
-imgui-glium-renderer = { version = "0.0.19-pre", path = "../imgui-rs/imgui-glium-renderer" }
-imgui-sys = { version = "0.0.19-pre", path = "../imgui-rs/imgui-sys", features = ["gfx", "glium"] }
 image = "0.18.0"
+failure = "0.1.5"
 
 # for thai language
 #chamkho = "0.1.0"
