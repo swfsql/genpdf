@@ -2,8 +2,6 @@
 #[macro_use]
 extern crate tera;
 #[macro_use]
-extern crate error_chain;
-#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
@@ -15,6 +13,7 @@ extern crate rayon;
 extern crate regex;
 extern crate semver;
 extern crate serde_yaml;
+#[macro_use]
 extern crate failure;
 
 use image::{imageops, FilterType, GenericImage, ImageBuffer, Pixel};
@@ -52,7 +51,7 @@ use std::process::Command;
 use rayon::prelude::*;
 use std::env;
 
-use failure::Error;
+use failure::{Error, Fail, ResultExt};
 
 type VS = Vec<String>;
 type OVS = Option<Vec<String>>;
@@ -60,14 +59,16 @@ type OVS = Option<Vec<String>>;
 mod consts;
 mod dir_info;
 mod info;
+mod macros;
 
 fn run() -> Result<(), Error> {
-    let ymlc = File::open("const.yml")?;
-    // .chain_err(|| "Failed to open the yml const file")?;
-    let consts: consts::Consts = serde_yaml::from_reader(ymlc)?;
-        // .chain_err(|| "Failed to parse the yml const file contents")?;
-    let min_ver = Version::parse(&consts.min_ver)?;
-        // .chain_err(|| format!("Failed to parse the consts version ({})", &consts.min_ver))?;
+    let ymlc = File::open("const.yml").context(fh!("Failed to open the yml const file"))?;
+    let consts: consts::Consts = serde_yaml::from_reader(ymlc)
+        .context(fh!("Failed to parse the yml const file contents"))?;
+    let min_ver = Version::parse(&consts.min_ver).context(fh!(
+        "Failed to parse the consts version ({})",
+        &consts.min_ver
+    ))?;
 
     env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
 
@@ -79,7 +80,7 @@ fn run() -> Result<(), Error> {
             hs
         }
     });
-    println!("<{:?}>", active_to_langs);
+    ph!("<{:?}>", active_to_langs);
 
     // let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) =
     let dirs: Vec<dir_info::DirInfo> =
@@ -189,35 +190,33 @@ fn run() -> Result<(), Error> {
     //println!("\n\n\n{:?}\n\n\n", dirs);
 
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
-        fs::create_dir_all(to)?;
-        // .chain_err(|| format!("Failed to create a new {} directory.", to))?;
+        fs::create_dir_all(to).context(fh!("Failed to create a new {} directory.", to))?;
 
         let dir = Path::new(from);
-        let dirs = read_dir(&dir)?;
-        // .chain_err(|| {
-        //     format!(
-        //         "Failed to start copying {} contents into the tmp directory.",
-        //         from
-        //     )
-        // })?;
+        let dirs = read_dir(&dir).context(fh!(
+            "Failed to start copying {} contents into the tmp directory.",
+            from
+        ))?;
 
         for path in dirs {
-            let path = path?;
-            // .chain_err(|| format!("Failed to open a file."))?;
+            let path = path.context(fh!("Failed to open a file."))?;
             if path.path().ends_with("tmp") {
                 continue;
             }
             let dst = Path::new(to).join(path.path().file_name().unwrap());
             let meta = path
-                .metadata()?;
-                // .chain_err(|| format!("Failed to read {} metadata.", path.path().display()))?;
+                .metadata()
+                .context(fh!("Failed to read {} metadata.", path.path().display()))?;
             if meta.is_dir() {
-                fs::create_dir(&dst)?;
-                    // .chain_err(|| format!("Failed to create a new {:?} directory.", &dst))?;
+                fs::create_dir(&dst)
+                    .context(fh!("Failed to create a new {:?} directory.", &dst))?;
             } else {
                 let orig = path.path();
-                fs::copy(&orig, &dst)?;
-                    // .chain_err(|| format!("Failed to copy {:?} into {:?} folder.", &orig, &dst))?;
+                fs::copy(&orig, &dst).context(fh!(
+                    "Failed to copy {:?} into {:?} folder.",
+                    &orig,
+                    &dst
+                ))?;
             }
         }
         Ok(())
@@ -261,7 +260,7 @@ fn run() -> Result<(), Error> {
                     (md, foots)
                 })
                 .collect::<Vec<(_, Vec<_>)>>();
-            println!("foots: <{:?}>", &ret);
+            ph!("foots: <{:?}>", &ret);
             ret
         };
         let diff_pos = count_foots(original)
@@ -269,13 +268,13 @@ fn run() -> Result<(), Error> {
             .zip(count_foots(proj))
             .enumerate()
             .inspect(|&(index, (&(ref md, ref foots_a), (_, ref foots_b)))| {
-                println!(" {}: [{}]", index, md);
+                ph!(" {}: [{}]", index, md);
                 foots_a
                     .iter()
                     .zip(foots_b)
                     .inspect(|&(num_a, num_b)| {
                         let diff = if num_a != num_b { " ~" } else { "" };
-                        println!("  {} == {}{}", num_a, num_b, diff);
+                        ph!("  {} == {}{}", num_a, num_b, diff);
                     })
                     .collect::<Vec<_>>();
             })
@@ -306,16 +305,16 @@ fn run() -> Result<(), Error> {
         copy_files_except_tmp(
             &proj.fulldir_str(),
             &format!("{}/tmp/original", &proj.fulldir_str()),
-        )?;
-        // .map_err(|e| {
-        //     format!(
-        //         "Error when copying files into {}/tmp/dir folder. Due to {}.",
-        //         &proj.fulldir_str(),
-        //         e
-        //     )
-        // })?;
+        )
+        .with_context(|e| {
+            fh!(
+                "Error when copying files into {}/tmp/dir folder. Due to {}.",
+                &proj.fulldir_str(),
+                e
+            )
+        })?;
 
-        println!("res: <{:?}>", proj.info.resources);
+        ph!("res: <{:?}>", proj.info.resources);
         if let &Some(ref ress) = &proj.info.resources {
             for res in ress {
                 if let Some(ref rule) = res.rule {
@@ -326,17 +325,11 @@ fn run() -> Result<(), Error> {
                                 &proj.base_dir, &proj.from_dir, content
                             );
                             let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
-                            println!("antes de copiar");
-                            fs::copy(&format!("{}", &origin), &format!("{}", &dest))?;
-                            // .chain_err(
-                            //     || {
-                            //         format!(
-                            //             "Error when copying files from {} into {}.",
-                            //             &origin, &dest
-                            //         )
-                            //     },
-                            // )?;
-                            println!("depois de copiar");
+                            ph!("antes de copiar");
+                            fs::copy(&format!("{}", &origin), &format!("{}", &dest)).context(
+                                fh!("Error when copying files from {} into {}.", &origin, &dest),
+                            )?;
+                            ph!("depois de copiar");
                         }
                     }
                 }
@@ -344,7 +337,7 @@ fn run() -> Result<(), Error> {
         }
 
         let mut authors: Vec<info::InfoPerson2> = vec![];
-        println!("authors: <{:?}>", &proj.info.persons);
+        ph!("authors: <{:?}>", &proj.info.persons);
         if let &Some(ref persons) = &proj.info.persons {
             for p in persons {
                 if let &Some(ref rule) = &p.rule {
@@ -357,7 +350,7 @@ fn run() -> Result<(), Error> {
                 }
             }
         }
-        println!("authors: <{:?}>", &authors);
+        ph!("authors: <{:?}>", &authors);
 
         // lang information
         let all_langs = consts.all_langs.clone();
@@ -367,8 +360,11 @@ fn run() -> Result<(), Error> {
             .partition(|lang| lang.to_dir_name == proj.info.translation.language);
         let def_lang: dir_info::Lang = def_lang
             .into_iter()
-            .next().unwrap();
-            // .chain_err(|| "Failed to get the default language information from preset")?;
+            .next()
+            .ok_or(format_err!(
+                "Failed to get the default language information from preset"
+            ))
+            .context(fh!())?;
 
         // TODO: other translations information (to link among themselves)
 
@@ -377,31 +373,31 @@ fn run() -> Result<(), Error> {
             copy_files_except_tmp(
                 &format!("{}/tmp/original", &proj.fulldir_str()),
                 &destination,
-            )?;
-            // .map_err(|e| {
-            //     format!(
-            //         "Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.",
-            //         &proj.fulldir_str(),
-            //         &proj.fulldir_str(),
-            //         target.name,
-            //         e
-            //     )
-            // })?;
+            )
+            .with_context(|e| {
+                fh!(
+                    "Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.",
+                    &proj.fulldir_str(),
+                    &proj.fulldir_str(),
+                    target.name,
+                    e
+                )
+            })?;
 
-            println!("target: <{:?}>", target);
+            ph!("target: <{:?}>", target);
             // TODO: crop and/or resize the cover images, and replace them
 
             for cover in &target.covers {
                 let img_filepath = format!("{}/{}", &destination, cover.cover_file);
                 let mut crop;
                 {
-                    let mut img = image::open(&img_filepath)?;
-                    // .map_err(|e| {
-                    //     format!(
-                    //         "Error when opening image file from {}. Due to {}.",
-                    //         &img_filepath, e
-                    //     )
-                    // })?;
+                    let mut img = image::open(&img_filepath).with_context(|e| {
+                        fh!(
+                            "Error when opening image file from {}. Due to {}.",
+                            &img_filepath,
+                            e
+                        )
+                    })?;
                     let (offsetx, offsety) = (cover.cover_dimensions[0], cover.cover_dimensions[1]);
                     let (width, height) = img.dimensions();
                     let width = if cover.cover_dimensions[2] == 0 {
@@ -417,16 +413,16 @@ fn run() -> Result<(), Error> {
                     // TODO: add paper proportion measure, so we can crop exceding width or exceding height
                     crop = imageops::crop(&mut img, offsetx, offsety, width, height).to_image();
                 }
-                crop.save(&img_filepath)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "Error when saving image file to {}. Due to {}.",
-                //         &img_filepath, e
-                //     )
-                // })?;
+                crop.save(&img_filepath).with_context(|e| {
+                    fh!(
+                        "Error when saving image file to {}. Due to {}.",
+                        &img_filepath,
+                        e
+                    )
+                })?;
             }
 
-            println!(
+            ph!(
                 "Next file is <{}>, for the target <{}>. continue? [Y/n] ",
                 &proj.fulldir_str(),
                 &target.name
@@ -467,28 +463,26 @@ fn run() -> Result<(), Error> {
                 let path = format!("{}/{}", &destination, &content);
                 box_clear_foot.push((false, false, false));
 
-                let mut file = File::open(&path)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
-                //         e, &path
-                //     )
-                // })?;
+                let mut file = File::open(&path).with_context(|e| {
+                    fh!(
+                        "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
+                        e,
+                        &path
+                    )
+                })?;
                 let mut s = String::new();
-                file.read_to_string(&mut s)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to read content file to replace by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
-                file = File::create(&path)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to overwrite content file to replace by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
+                file.read_to_string(&mut s).with_context(|e| {
+                    fh!(
+                        "failed to read content file to replace by regex. Error: {:?}",
+                        e
+                    )
+                })?;
+                file = File::create(&path).with_context(|e| {
+                    fh!(
+                        "failed to overwrite content file to replace by regex. Error: {:?}",
+                        e
+                    )
+                })?;
                 // let mut s2: String = "".into();
 
                 s = format!("\n{}\n", s); // adds new line around each file
@@ -512,7 +506,7 @@ fn run() -> Result<(), Error> {
                 s = consts::RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
                 // s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
                 if target.has_parts {
-                    println!("start to test part!");
+                    ph!("start to test part!");
                     // s = RE_SUB_HASH_DOWNGRADE.replace_all(&s, "##").to_string();
                     // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$").unwrap();
                     s = s
@@ -531,7 +525,7 @@ fn run() -> Result<(), Error> {
                             if c1.chars().count() > 0 {
                                 return format!("{}{}", c1.clone(), c2.clone()).to_string() + "\n";
                             } else {
-                                println!("found a part!");
+                                ph!("found a part!");
                                 if target.clear_page_active {
                                     box_clear_foot[index - 1].0 = true;
                                     box_clear_foot[index - 1].1 = true;
@@ -546,7 +540,7 @@ fn run() -> Result<(), Error> {
                             }
                         })
                         .collect::<String>();
-                    println!("finished to test part!");
+                    ph!("finished to test part!");
                 }
                 s = consts::RE_SYMB_HASH
                     .replace_all(&s, "$1\\texthash{}")
@@ -568,7 +562,7 @@ fn run() -> Result<(), Error> {
                 // TODO: normalize previous replacements inside math-mode
 
                 let mut do_section_clear = |line: &str| {
-                    println!("Debug line:\n{}", &line);
+                    ph!("Debug line:\n{}", &line);
                     let depth = line.chars().take_while(|&c| c == '#').count();
                     if depth == 0 {
                         // line.to_string()
@@ -603,7 +597,7 @@ fn run() -> Result<(), Error> {
                     }
                     ()
                 };
-                println!("finished endfoot and endsec insertions");
+                ph!("finished endfoot and endsec insertions");
 
                 let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
                     if line.starts_with(start) {
@@ -630,7 +624,7 @@ fn run() -> Result<(), Error> {
                                 format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
                             let line_end: String =
                                 line.chars().skip(initials.chars().count()).collect();
-                            println!("line start start: <{:?}>", &line_start_start);
+                            ph!("line start start: <{:?}>", &line_start_start);
                             if let Some(c) = line_start_start.chars().next() {
                                 inis.push(c);
                             }
@@ -694,13 +688,12 @@ fn run() -> Result<(), Error> {
                 // file_all.write_all(s_all.as_bytes())
                 //     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
 
-                file.write_all(s.as_bytes())?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to write on content file that was replaced by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
+                file.write_all(s.as_bytes()).with_context(|e| {
+                    fh!(
+                        "failed to write on content file that was replaced by regex. Error: {:?}",
+                        e
+                    )
+                })?;
             }
 
             // repalce every file to add footnote reset, the end of chapter box and clearpage information
@@ -713,45 +706,43 @@ fn run() -> Result<(), Error> {
             {
                 let path = format!("{}/{}", &destination, &content);
 
-                let mut file = File::open(&path)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
-                //         e, &path
-                //     )
-                // })?;
+                let mut file = File::open(&path).with_context(|e| {
+                    fh!(
+                        "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
+                        e,
+                        &path
+                    )
+                })?;
                 let mut s = String::new();
-                file.read_to_string(&mut s)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to read content file to replace by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
+                file.read_to_string(&mut s).with_context(|e| {
+                    fh!(
+                        "failed to read content file to replace by regex. Error: {:?}",
+                        e
+                    )
+                })?;
                 s.trim();
 
                 let box_s = if box_clear_foot.0 { "\\utfbox" } else { "" };
                 let clear_s = if box_clear_foot.1 { "\\clearpage" } else { "" };
                 let foot_s = if box_clear_foot.2 { "\\endfoot" } else { "" };
 
-                file = File::create(&path)?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to overwrite content file to replace by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
+                file = File::create(&path).with_context(|e| {
+                    fh!(
+                        "failed to overwrite content file to replace by regex. Error: {:?}",
+                        e
+                    )
+                })?;
                 file.write_all(
                     format!("\n{}{}{}{}\n", s.trim(), foot_s, box_s, clear_s).as_bytes(),
-                )?;
-                // .map_err(|e| {
-                //     format!(
-                //         "failed to write on content file that was replaced by regex. Error: {:?}",
-                //         e
-                //     )
-                // })?;
+                )
+                .with_context(|e| {
+                    fh!(
+                        "failed to write on content file that was replaced by regex. Error: {:?}",
+                        e
+                    )
+                })?;
             }
-            println!("finished the whole substitutions");
+            ph!("finished the whole substitutions");
 
             let used_initials_hs: HashSet<char> = HashSet::from_iter(used_initials);
             let sent_initial = if let Some(pos) = initials
@@ -790,26 +781,29 @@ fn run() -> Result<(), Error> {
             //     continue;
             // }
 
-            println!("start rendering");
+            ph!("start rendering");
 
             let mut rendered = consts::TERA
-                .render("main.tex", &def).unwrap();
-                // .chain_err(|| "Failed to render the tex templates")?;
+                .render("main.tex", &def)
+                .map_err(|_| format_err!("Failed to render the tex templates"))
+                .context(fh!())?;
+
             rendered = consts::RE_FORWARD_ARROW
                 .replace_all(&rendered, "{")
                 .to_string(); // }
             debug!("{}", rendered);
 
-            println!("finished rendering");
+            ph!("finished rendering");
 
             let mut mdok = File::create(format!(
                 "{}/tmp/{}/main_ok.tex",
                 &proj.fulldir_str(),
                 target.name
-            ))?;
-            // .chain_err(|| "Falied to create tex file")?;
-            mdok.write_fmt(format_args!("{}", rendered))?;
-                // .chain_err(|| "Failed to write on tex file")?;
+            ))
+            .context(fh!("Falied to create tex file"))?;
+
+            mdok.write_fmt(format_args!("{}", rendered))
+                .context(fh!("Failed to write on tex file"))?;
 
             info!("TeX file written.");
 
@@ -818,11 +812,11 @@ fn run() -> Result<(), Error> {
                 proj = &proj.fulldir_str(),
                 tgt = &target.name
             ))
-            .unwrap()
-            // .chain_err(|| "Failed to canonicalize the working project directory.")?
+            .context(fh!("Failed to canonicalize the working project directory."))?
             .into_os_string()
-            .into_string().unwrap();
-            // .map_err(|e| format!("Invalid working directory string path. Error: {:?}", e))?;
+            .into_string()
+            .map_err(|e| format_err!("Invalid working directory string path. Error: {:?}", e))
+            .context(fh!())?;
 
             //let cmd = format!("xelatex main_ok.tex -include-directory=\"{cd}\" -output-directory=\"{cd}\" -halt-on-error --shell-escape",
             //let cmd = format!("xelatex \"{cd}\\main_ok.tex\" -halt-on-error --shell-escape",
@@ -835,8 +829,7 @@ fn run() -> Result<(), Error> {
                 cd = &cdpath.replace(" ", "^ ")[4..]
             );
             //cd=&proj.dir[2..]);
-            println!("Command:\n{:?}", &cmd);
-            //println!("Command:\n{}", &cmd);
+            ph!("Command:\n{:?}", &cmd);
 
             //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
 
@@ -844,21 +837,21 @@ fn run() -> Result<(), Error> {
                 let output = Command::new("cmd")
                     .args(&["/C", cmd])
                     //.args(&["/C", cmd.to_str().unwrap()])
-                    .output()?;
-                    // .chain_err(|| "Falied to create tex file")?;
+                    .output()
+                    .context(fh!("Falied to create tex file"))?;
 
                 if !output.status.success() {
-                    let err_msg = format!(
+                    let err_msg = fh!(
                         "status: {}\n; stdout: {}\n; stderr: {}\n",
                         output.status,
                         String::from_utf8_lossy(&output.stdout),
                         String::from_utf8_lossy(&output.stderr)
                     );
 
-                    println!("error when executing xelatex: \n{}", err_msg);
+                    ph!("error when executing xelatex: \n{}", err_msg);
 
-                    panic!("Error: {}", err_msg);
-                    // bail!("Error {}.", err_msg);
+                    bail!("Error: {}", err_msg);
+                // bail!("Error {}.", err_msg);
                 // Err(format!("error.. "));
                 } else {
                     // success
@@ -871,7 +864,7 @@ fn run() -> Result<(), Error> {
                         continue;
                     }
 
-                    println!("preparing to copy a file..");
+                    ph!("preparing to copy a file..");
 
                     let extension = Path::new(&format!("{}/main_ok.pdf", &destination))
                         .extension()
@@ -891,23 +884,20 @@ fn run() -> Result<(), Error> {
                     let out_dest_file = format!("{}-{}.{}", &proj.proj_dir, target.name, extension);
                     let out_dest = format!("{}/{}", out_dest_dir, out_dest_file);
 
-                    fs::create_dir_all(&out_dest_dir)?;
-                    // .chain_err(|| {
-                    //     format!("Error when creating directories {}", &out_dest_dir)
-                    // })?;
+                    fs::create_dir_all(&out_dest_dir)
+                        .context(fh!("Error when creating directories {}", &out_dest_dir))?;
 
                     fs::copy(
                         &format!("{}/main_ok.pdf", &destination),
                         format!("{}", &out_dest),
-                    )?;
-                    // .chain_err(|| {
-                    //     format!(
-                    //         "Error when copying files from {}/main_ok.pdf into {}.",
-                    //         &destination, &out_dest
-                    //     )
-                    // })?;
+                    )
+                    .context(fh!(
+                        "Error when copying files from {}/main_ok.pdf into {}.",
+                        &destination,
+                        &out_dest
+                    ))?;
 
-                    println!("\n->file copied to: \n{}\n", &out_dest);
+                    ph!("\n->file copied to: \n{}\n", &out_dest);
                 }
             }
         }
@@ -1145,14 +1135,14 @@ fn run() -> Result<(), Error> {
     }
 
     {
-        println!("clear all tmp folders? [y/N] ");
+        ph!("clear all tmp folders? [y/N] ");
 
         // bail!("MORREU MAS PASSA BEM...");
 
         // TODO: a structure that groups some information for the same project for different languages
     }
 
-    info!("finished..");
+    ph!("finished..");
     Ok(())
 }
 
@@ -1160,25 +1150,4 @@ fn main() -> Result<(), Error> {
     env_logger::init().unwrap();
     run()?;
     Ok(())
-    /*
-    if let Err(ref e) = run() {
-        use std::io::Write;
-        let stderr = &mut ::std::io::stderr();
-        let errmsg = "Error writing to stderr";
-
-        writeln!(stderr, "error: {}", e).expect(errmsg);
-
-        for e in e.iter().skip(1) {
-            writeln!(stderr, "caused by: {}", e).expect(errmsg);
-        }
-
-        // The backtrace is not always generated. Try to run this example
-        // with `RUST_BACKTRACE=1`.
-        if let Some(backtrace) = e.backtrace() {
-            writeln!(stderr, "backtrace: {:?}", backtrace).expect(errmsg);
-        }
-
-        ::std::process::exit(1);
-    }
-    */
 }
