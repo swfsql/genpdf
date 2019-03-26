@@ -1,0 +1,484 @@
+min_ver = "0.1.4"
+
+# minimum of 2 is needed to the cover and summary and footnotes to get alright
+passages = 2 
+
+cover_nodes = [
+  "page", 
+  "title", 
+  "author", 
+  "translator", 
+  "dummy",
+]
+
+all_langs_from_dir = "./../crowdin"
+all_langs_to_dir = "./../crowdin_l10n_master"
+output_dir = "./../utopian_outputs"
+
+initials = [
+  ["Zallman", "ABCDEFGHIJKLMNOPQRSTUVWZ"],
+
+  # TODO
+  # ["AM Intex", "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÔÕÖŒÙÚÛÜ"],
+]
+
+num_cpu = 2
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "ar-EG"
+set_lang = "arabic"
+title = "Arabic (Egypt)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "ar-SA"
+set_lang = "arabic"
+title = "Arabic (Saudi Arabia)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "bn"
+set_lang = "bengali"
+title = "Bengali"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ceb"
+set_lang = "tagalog" 
+title = "Cebuano"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "cs"
+set_lang = "czech" 
+title = "Czech"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "de"
+set_lang = "german" 
+title = "German"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = true
+to_active = true
+to_dir_name = "en"
+set_lang = "english"
+title = "English"
+from_url = "https://crowdin.com/project/ancap-ch/"
+from_dir_name = "from_en"
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-AR"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-BO"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-CL"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-CO"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-EM"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "es-ES"
+set_lang = "spanish"
+title = "Spanish"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-MX"
+set_lang = "spanish"
+title = ""
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "es-VE"
+set_lang = "spanish"
+title = "Spanish (Venezuela)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "fa"
+set_lang = "farsi"
+title = "Persian"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "fil"
+set_lang = "tagalog"
+title = "Filipino"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "fr"
+set_lang = "french"
+title = "French"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ha"
+set_lang = "english"
+title = "Hausa"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "hi"
+set_lang = "hindi"
+title = "Hindi"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "id"
+set_lang = "bahasai"
+title = "Indonesian"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ig"
+set_lang = "english"
+title = "Igbo"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "it"
+set_lang = "italian"
+title = "Italian"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ja"
+set_lang = ""
+title = "Japanese"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "ko"
+set_lang = ""
+title = "Korean"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "mk"
+set_lang = "bulgarian"
+title = "Macedonian (FYROM)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ms"
+set_lang = "bahasam"
+title = "Malay"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "my"
+set_lang = ""
+title = "Burmese"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "nl"
+set_lang = "dutch"
+title = "Dutch"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "pcm"
+set_lang = "english"
+title = "Nigerian Pidgin"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "pl"
+set_lang = "polish"
+title = "Polish"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "pt-BR"
+set_lang = "brazil" 
+title = "Portuguese (Brazilian)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "pt-PT"
+set_lang = "portuges"
+title = "Portuguese"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "ro"
+set_lang = "romanian"
+title = "Romanian"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ru"
+set_lang = "russian"
+title = "Russian"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = false
+to_dir_name = "th"
+set_lang = "thai"
+title = "Thai"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "tl"
+set_lang = ""
+title = "Tagalog"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "tr"
+set_lang = "turkish"
+title = "Turkish"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ur-IN"
+set_lang = "urdu"
+title = "Urdu (India)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "ur-PK"
+set_lang = "urdu"
+title = "Urdu (Pakistan)"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "vi"
+set_lang = "vietnamese"
+title = "Vietnamese"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "yo"
+set_lang = "english"
+title = "Yoruba"
+from_url = ""
+from_dir_name = ""
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "zh-CN"
+set_lang = ""
+title = "Chinese Simplified"
+from_url = ""
+from_dir_name = ""
+
+
+# arabic
+# bengali
+# *catalan
+# *dutch
+# english
+# *esperanto
+# farsi
+# german
+# *greek
+# *hebrew
+# hindi
+# italian
+# *lao
+# *lsorbian
+# *magyar
+# russian
+# *sanskrit
+# *serbian
+# *syriac
+# thai
+# *usorbian
+
+
+# albanian
+# *amharic
+# *armenian
+# *asturian
+# bahasai
+# bahasam
+# *basque
+# brazil[ian]
+# *breton
+# *bulgarian
+# *coptic
+# *croatian
+# *czech
+# *danish
+# *divehi
+# *estonian
+# *finnish
+# french
+# *galician
+# *icelandic
+# *interlingua
+# *irish
+# *latin
+# *latvian
+# *lithuanian
+# *malayalam
+# *marathi
+# *norsk
+# *nynorsk
+# *occitan
+# polish
+# portuges
+# *romanian
+# *samin
+# *scottish
+# *slovak
+# *slovenian
+# spanish
+# *swedish
+# *tamil
+# *telugu
+# turkish
+# *turkmen
+# *ukrainian
+# urdu
+# vietnamese
+# *welsh

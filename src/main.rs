@@ -15,6 +15,7 @@ extern crate semver;
 extern crate serde_yaml;
 #[macro_use]
 extern crate failure;
+extern crate toml;
 
 use image::{imageops, FilterType, GenericImage, ImageBuffer, Pixel};
 //extern crate walkdir;
@@ -62,13 +63,16 @@ mod info;
 mod macros;
 
 fn run() -> Result<(), Error> {
-    let ymlc = File::open("const.yml").context(fh!("Failed to open the yml const file"))?;
-    let consts: consts::Consts = serde_yaml::from_reader(ymlc)
-        .context(fh!("Failed to parse the yml const file contents"))?;
-    let min_ver = Version::parse(&consts.min_ver).context(fh!(
-        "Failed to parse the consts version ({})",
-        &consts.min_ver
-    ))?;
+    let tomlc = fs::read_to_string("consts.toml") //
+        .context(fh!("Failed to open the toml consts file"))?;
+    let consts: consts::Consts =
+        toml::from_str(&tomlc) //
+            .context(fh!("Failed to parse the toml consts file contents"))?;
+    let min_ver = Version::parse(&consts.min_ver) //
+        .context(fh!(
+            "Failed to parse the consts version ({})",
+            &consts.min_ver
+        ))?;
 
     env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
 
@@ -190,16 +194,19 @@ fn run() -> Result<(), Error> {
     //println!("\n\n\n{:?}\n\n\n", dirs);
 
     fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
-        fs::create_dir_all(to).context(fh!("Failed to create a new {} directory.", to))?;
+        fs::create_dir_all(to) //
+            .context(fh!("Failed to create a new {} directory.", to))?;
 
         let dir = Path::new(from);
-        let dirs = read_dir(&dir).context(fh!(
-            "Failed to start copying {} contents into the tmp directory.",
-            from
-        ))?;
+        let dirs = read_dir(&dir) //
+            .context(fh!(
+                "Failed to start copying {} contents into the tmp directory.",
+                from
+            ))?;
 
         for path in dirs {
-            let path = path.context(fh!("Failed to open a file."))?;
+            let path = path //
+                .context(fh!("Failed to open a file."))?;
             if path.path().ends_with("tmp") {
                 continue;
             }
@@ -212,7 +219,8 @@ fn run() -> Result<(), Error> {
                     .context(fh!("Failed to create a new {:?} directory.", &dst))?;
             } else {
                 let orig = path.path();
-                fs::copy(&orig, &dst).context(fh!(
+                fs::copy(&orig, &dst) //
+                .context(fh!(
                     "Failed to copy {:?} into {:?} folder.",
                     &orig,
                     &dst
@@ -326,9 +334,12 @@ fn run() -> Result<(), Error> {
                             );
                             let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
                             ph!("antes de copiar");
-                            fs::copy(&format!("{}", &origin), &format!("{}", &dest)).context(
-                                fh!("Error when copying files from {} into {}.", &origin, &dest),
-                            )?;
+                            fs::copy(&format!("{}", &origin), &format!("{}", &dest)) //
+                                .context(fh!(
+                                    "Error when copying files from {} into {}.",
+                                    &origin,
+                                    &dest
+                                ))?;
                             ph!("depois de copiar");
                         }
                     }
@@ -391,13 +402,14 @@ fn run() -> Result<(), Error> {
                 let img_filepath = format!("{}/{}", &destination, cover.cover_file);
                 let mut crop;
                 {
-                    let mut img = image::open(&img_filepath).with_context(|e| {
-                        fh!(
-                            "Error when opening image file from {}. Due to {}.",
-                            &img_filepath,
-                            e
-                        )
-                    })?;
+                    let mut img = image::open(&img_filepath) //
+                        .with_context(|e| {
+                            fh!(
+                                "Error when opening image file from {}. Due to {}.",
+                                &img_filepath,
+                                e
+                            )
+                        })?;
                     let (offsetx, offsety) = (cover.cover_dimensions[0], cover.cover_dimensions[1]);
                     let (width, height) = img.dimensions();
                     let width = if cover.cover_dimensions[2] == 0 {
@@ -413,13 +425,14 @@ fn run() -> Result<(), Error> {
                     // TODO: add paper proportion measure, so we can crop exceding width or exceding height
                     crop = imageops::crop(&mut img, offsetx, offsety, width, height).to_image();
                 }
-                crop.save(&img_filepath).with_context(|e| {
-                    fh!(
-                        "Error when saving image file to {}. Due to {}.",
-                        &img_filepath,
-                        e
-                    )
-                })?;
+                crop.save(&img_filepath) //
+                    .with_context(|e| {
+                        fh!(
+                            "Error when saving image file to {}. Due to {}.",
+                            &img_filepath,
+                            e
+                        )
+                    })?;
             }
 
             ph!(
@@ -463,26 +476,29 @@ fn run() -> Result<(), Error> {
                 let path = format!("{}/{}", &destination, &content);
                 box_clear_foot.push((false, false, false));
 
-                let mut file = File::open(&path).with_context(|e| {
-                    fh!(
+                let mut file = File::open(&path) //
+                    .with_context(|e| {
+                        fh!(
                         "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
                         e,
                         &path
                     )
-                })?;
+                    })?;
                 let mut s = String::new();
-                file.read_to_string(&mut s).with_context(|e| {
-                    fh!(
-                        "failed to read content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
-                file = File::create(&path).with_context(|e| {
-                    fh!(
-                        "failed to overwrite content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                file.read_to_string(&mut s) //
+                    .with_context(|e| {
+                        fh!(
+                            "failed to read content file to replace by regex. Error: {:?}",
+                            e
+                        )
+                    })?;
+                file = File::create(&path) //
+                    .with_context(|e| {
+                        fh!(
+                            "failed to overwrite content file to replace by regex. Error: {:?}",
+                            e
+                        )
+                    })?;
                 // let mut s2: String = "".into();
 
                 s = format!("\n{}\n", s); // adds new line around each file
@@ -688,12 +704,13 @@ fn run() -> Result<(), Error> {
                 // file_all.write_all(s_all.as_bytes())
                 //     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
 
-                file.write_all(s.as_bytes()).with_context(|e| {
-                    fh!(
+                file.write_all(s.as_bytes()) //
+                    .with_context(|e| {
+                        fh!(
                         "failed to write on content file that was replaced by regex. Error: {:?}",
                         e
                     )
-                })?;
+                    })?;
             }
 
             // repalce every file to add footnote reset, the end of chapter box and clearpage information
@@ -706,32 +723,35 @@ fn run() -> Result<(), Error> {
             {
                 let path = format!("{}/{}", &destination, &content);
 
-                let mut file = File::open(&path).with_context(|e| {
-                    fh!(
+                let mut file = File::open(&path) //
+                    .with_context(|e| {
+                        fh!(
                         "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
                         e,
                         &path
                     )
-                })?;
+                    })?;
                 let mut s = String::new();
-                file.read_to_string(&mut s).with_context(|e| {
-                    fh!(
-                        "failed to read content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                file.read_to_string(&mut s) //
+                    .with_context(|e| {
+                        fh!(
+                            "failed to read content file to replace by regex. Error: {:?}",
+                            e
+                        )
+                    })?;
                 s.trim();
 
                 let box_s = if box_clear_foot.0 { "\\utfbox" } else { "" };
                 let clear_s = if box_clear_foot.1 { "\\clearpage" } else { "" };
                 let foot_s = if box_clear_foot.2 { "\\endfoot" } else { "" };
 
-                file = File::create(&path).with_context(|e| {
-                    fh!(
-                        "failed to overwrite content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                file = File::create(&path) //
+                    .with_context(|e| {
+                        fh!(
+                            "failed to overwrite content file to replace by regex. Error: {:?}",
+                            e
+                        )
+                    })?;
                 file.write_all(
                     format!("\n{}{}{}{}\n", s.trim(), foot_s, box_s, clear_s).as_bytes(),
                 )
