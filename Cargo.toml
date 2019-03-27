@@ -18,6 +18,7 @@ rayon = "0.9"
 image = "0.18.0"
 toml = "0.5.0"
 failure = "0.1.5"
+actix-web = "0.7"
 
 # for thai language
 #chamkho = "0.1.0"
