@@ -15,6 +15,7 @@ extern crate semver;
 extern crate serde_yaml;
 #[macro_use]
 extern crate failure;
+extern crate serde;
 extern crate toml;
 
 use image::{imageops, FilterType, GenericImage, ImageBuffer, Pixel};
@@ -57,139 +58,31 @@ use failure::{Error, Fail, ResultExt};
 type VS = Vec<String>;
 type OVS = Option<Vec<String>>;
 
+#[macro_use]
+mod macros;
+
 mod consts;
 mod dir_info;
 mod info;
-mod macros;
 
 fn run() -> Result<(), Error> {
-    let tomlc = fs::read_to_string("consts.toml") //
-        .context(fh!("Failed to open the toml consts file"))?;
-    let consts: consts::Consts =
-        toml::from_str(&tomlc) //
-            .context(fh!("Failed to parse the toml consts file contents"))?;
-    let min_ver = Version::parse(&consts.min_ver) //
-        .context(fh!(
-            "Failed to parse the consts version ({})",
-            &consts.min_ver
-        ))?;
+    // let consts = load_const_file("consts.toml")?;
+    use std::convert::TryFrom;
+    let consts = consts::Consts::try_from("consts.toml".as_ref())?;
 
-    env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
+    // rayon config
+    {
+        env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
+    }
 
-    let active_to_langs = consts.all_langs.iter().fold(HashSet::new(), |mut hs, l| {
-        if l.to_active {
-            hs.insert(&l.to_dir_name);
-            hs
-        } else {
-            hs
-        }
-    });
-    ph!("<{:?}>", active_to_langs);
+    ph!("active langs\n{:?}", consts.get_active_langs());
 
-    // let (originals, translations): (Vec<Vec<DirInfo>>, Vec<Vec<DirInfo>>) =
-    let dirs: Vec<dir_info::DirInfo> =
-        consts.all_langs.iter().filter_map(|lang| {
-            // println!("::lang\n{:?}", lang);
-            if !lang.from_active {
-                return None;
-            }
+    // get all projects that may be worked with
+    let dirs: Vec<dir_info::DirInfo> = (&consts).into();
 
-            let from_dir_name = lang.from_dir_name.clone();
-            if let None = from_dir_name {
-                return None;
-            }
-            let from_dir_name = from_dir_name.unwrap();
+    ph!("active langs (again)\n{:?}", consts.get_active_langs());
 
-            info!("Reading language directory: {}", lang.to_dir_name);
-            let dir = fs::read_dir(format!("{}/{}", &consts.all_langs_to_dir, &from_dir_name));
-
-            println!("::dir\n{:?}... {:?}", dir, format!("{}/{}", consts.all_langs_to_dir, &from_dir_name));
-
-            if let Err(e) = dir {
-                warn!("Failed to open the contents of {}/{} directory. Error: {}", &from_dir_name, lang.to_dir_name, e);
-                return None;
-            }
-            let oks: Vec<dir_info::DirInfo> = dir.unwrap().into_iter().filter_map(|lang_dir| {
-
-                let lang_dir = lang_dir
-                    .map_err(|e| format!("Failed to open language directory {} due to {}", lang.to_dir_name, e));
-                if let Err(_) = lang_dir {
-                    return None;
-                }
-                let lang_dir = lang_dir.unwrap().path();
-                let lang_dir_name = lang_dir.file_name().unwrap().to_string_lossy().to_string();
-
-                if !active_to_langs.contains(&lang_dir_name) {
-                    return None;
-                }
-                let proj_dirs = fs::read_dir(lang_dir);
-                let dir_infos = proj_dirs.unwrap().into_iter().filter_map(|proj_dir| {
-
-                    let proj_dir = proj_dir.unwrap().path();
-                    let proj_dir_name = proj_dir.file_name().unwrap().to_string_lossy().to_string();
-                    // println!("::{} ", proj_dir_name);
-                    let yml = File::open(proj_dir.join("info.yml"))
-                        .map_err(|e| format!("Failed to open the yml info file in folder {}. Error: {}", proj_dir_name, e));
-                    if let Err(_) = yml {
-                        // println!(" >> yml err");
-                        return None;
-                    }
-                    let yml = yml.unwrap();
-                    let info = serde_yaml::from_reader(yml)
-                        .map_err(|e| format!("Failed to parse the yml info file contents in folder {}. Error: {}", proj_dir_name, e));
-                    if let Err(_) = info {
-                        // println!(" >> info err <{}>", e);
-                        return None;
-                    }
-                    let info: info::Info = info.unwrap();
-                    let info_ver = Version::parse(&info.version)
-                        .map_err(|e| format!("Failed to parse the info version ({}). Error: {}", &info.version, e));
-                    if let Err(_) = info_ver {
-                        // println!(" >> ver err");
-                        return None;
-                    }
-                    let info_ver = info_ver.unwrap();
-                    if info_ver > min_ver {
-                        // bail!(format!("Error: version of info yaml file is too low ({} < {})", &info_ver, min_ver));
-                        // println!(" >> min ver err");
-                        return None;
-                    }
-
-                    let dir_info = dir_info::DirInfo{
-                        base_dir: format!("{}", &consts.all_langs_to_dir),
-                        from_dir: format!("{}", &from_dir_name),
-                        lang_dir: format!("{}", &lang_dir_name),
-                        proj_dir: format!("{}", &proj_dir_name),
-                        info: info,
-                    };
-
-                    println!("\ninfo:\n{:?}\n", &dir_info.info);
-
-                    return Some(dir_info);
-
-                }).collect::<Vec<_>>();
-
-
-                Some(dir_infos)
-            }).fold(vec![], |mut vs, v| {
-                vs.extend(v);
-                vs
-            });
-            // for e in errs {
-            //     warn!("project not read: {}", e.err().unwrap());
-            // }
-            if let None = oks.iter().next() {
-                None
-            } else {
-                Some(oks.into_iter().collect::<Vec<dir_info::DirInfo>>()
-                    // .into_iter()
-                    // .partition(|dir_info| !dir_info.info.translation)
-                )
-            }
-    }).fold(vec![], |mut vs, v| {
-        vs.extend(v);
-        vs
-    });
+    panic!(fh!("nois: {:?}", &true));
 
     //println!("\n\n\n{:?}\n\n\n", dirs);
 
@@ -782,7 +675,7 @@ fn run() -> Result<(), Error> {
                 thanks: vec![],
                 reviewers: vec![],
             };
-            let def = dir_info::Defaults {
+            let def = dir_info::DefaultsFile {
                 info: proj.info.clone(),
                 info2: info2.clone(),
                 target: target.name.clone(),

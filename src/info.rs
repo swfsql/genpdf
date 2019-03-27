@@ -1,6 +1,8 @@
 use crate::{OVS, VS};
+use semver;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct InfoTranslation {
     pub language: String,
     pub is_translation: bool,
@@ -11,12 +13,14 @@ pub struct InfoTranslation {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct InfoPerson {
     pub identifier: Option<String>,
     pub rule: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct InfoResource {
     pub rule: Option<String>,
     pub content: Option<String>,
@@ -26,12 +30,14 @@ pub struct InfoResource {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct InfoCover {
     pub cover_file: String,
     pub cover_dimensions: Vec<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct InfoTarget {
     pub name: String,
     pub size: String,
@@ -51,8 +57,10 @@ pub struct InfoTarget {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct Info {
-    pub version: String,
+    #[serde(with = "crate::consts::semver_serde")]
+    pub version: semver::Version,
     pub translation: InfoTranslation,
     pub titles: VS,
     pub discussions: Option<Vec<VS>>,
@@ -66,10 +74,12 @@ pub struct Info {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct InfoPerson2 {
     pub name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Info2 {
     pub authors: Vec<InfoPerson2>,
     pub translators: Vec<InfoPerson2>,

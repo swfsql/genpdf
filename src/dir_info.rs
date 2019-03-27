@@ -2,6 +2,7 @@ use crate::{consts, info};
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Lang {
     pub from_active: bool,
     pub to_active: bool,
@@ -12,7 +13,7 @@ pub struct Lang {
     pub from_dir_name: Option<String>, // from_en
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Defaults {
     pub info: info::Info,
     pub info2: info::Info2,
@@ -28,7 +29,25 @@ pub struct Defaults {
     pub consts: consts::Consts,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct DefaultsFile {
+    pub info: info::Info,
+    pub info2: info::Info2,
+    pub target: String,
+    pub info_target: info::InfoTarget,
+
+    pub sent_initial: String,
+
+    pub all_langs: Vec<Lang>,
+    pub def_lang: Lang,
+    pub other_langs: Vec<Lang>,
+
+    pub consts: consts::Consts,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct DirInfo {
     pub base_dir: String,
     pub from_dir: String,

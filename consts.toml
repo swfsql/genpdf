@@ -11,9 +11,9 @@ cover_nodes = [
   "dummy",
 ]
 
-all_langs_from_dir = "./../crowdin"
-all_langs_to_dir = "./../crowdin_l10n_master"
-output_dir = "./../utopian_outputs"
+all_langs_from_dir = "/home/thi/ancap.ch/from_dir"
+all_langs_to_dir = "/home/thi/ancap.ch/to_dir"
+output_dir = "/home/thi/ancap.ch/output"
 
 initials = [
   ["Zallman", "ABCDEFGHIJKLMNOPQRSTUVWZ"],
@@ -23,6 +23,8 @@ initials = [
 ]
 
 num_cpu = 2
+
+# ---------------------------------------------------------------------------
 
 [[all_langs]]
 from_active = false
@@ -411,6 +413,7 @@ title = "Chinese Simplified"
 from_url = ""
 from_dir_name = ""
 
+# ---------------------------------------------------------------------------
 
 # arabic
 # bengali
