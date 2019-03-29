@@ -13,25 +13,8 @@ pub struct Lang {
     pub from_dir_name: Option<String>, // from_en
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Defaults {
-    pub info: info::Info,
-    pub info2: info::Info2,
-    pub target: String,
-    pub info_target: info::InfoTarget,
-
-    pub sent_initial: String,
-
-    pub all_langs: Vec<Lang>,
-    pub def_lang: Lang,
-    pub other_langs: Vec<Lang>,
-
-    pub consts: consts::Consts,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct DefaultsFile {
     pub info: info::Info,
     pub info2: info::Info2,
     pub target: String,
@@ -49,10 +32,18 @@ pub struct DefaultsFile {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct DirInfo {
+    /// eg. "/home/thi/ancap.ch/to_dir"
     pub base_dir: String,
+
+    /// eg. "from_en"
     pub from_dir: String,
+
+    /// eg. "tl"
     pub lang_dir: String,
+
+    /// eg. "Universailly Preferable Behaviour"
     pub proj_dir: String,
+
     pub info: info::Info,
 }
 

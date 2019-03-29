@@ -26,10 +26,9 @@ mod consts;
 mod dir_info;
 mod info;
 mod temp;
+mod web;
 
-use actix_web as web;
 use failure::Error;
-use std::env;
 
 type VS = Vec<String>;
 type OVS = Option<Vec<String>>;
@@ -44,31 +43,12 @@ fn main() -> Result<(), Error> {
     // get all projects that may be worked with
     let _dirs: Vec<dir_info::DirInfo> = (&consts).into();
 
-    // rayon config
-    {
-        // env::set_var("RAYON_RS_NUM_CPUS", format!("{}", consts.num_cpu));
-    }
-
+    // ph!("{:#?}", _dirs.get(0).unwrap());
     // panic!(fh!("nois: {:?}", &true));
 
     // run web-server
-    {
-        ph!("starting web-server");
-        web::server::new(|| web::App::new().resource("/", |r| r.f(handler::index)))
-            .bind("127.0.0.1:8088")
-            .unwrap()
-            .run();
-    }
+    web::run().expect(&fh!());
 
-    ph!("finished..");
+    ph!("exiting pdfgen..");
     Ok(())
-}
-
-mod handler {
-
-    use actix_web as web;
-
-    pub fn index(_req: &web::HttpRequest) -> &'static str {
-        "Hello world!"
-    }
 }

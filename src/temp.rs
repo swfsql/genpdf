@@ -591,7 +591,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             thanks: vec![],
             reviewers: vec![],
         };
-        let def = dir_info::DefaultsFile {
+        let def = dir_info::Defaults {
             info: proj.info.clone(),
             info2: info2.clone(),
             target: target.name.clone(),
