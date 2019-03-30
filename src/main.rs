@@ -36,18 +36,10 @@ type OVS = Option<Vec<String>>;
 fn main() -> Result<(), Error> {
     env_logger::init().unwrap();
 
-    use std::convert::TryFrom;
-    let consts = consts::Consts::try_from("consts.toml".as_ref())?;
-    ph!("active langs\n{:?}", consts.get_active_langs());
-
-    // get all projects that may be worked with
-    let _dirs: Vec<dir_info::DirInfo> = (&consts).into();
-
-    // ph!("{:#?}", _dirs.get(0).unwrap());
-    // panic!(fh!("nois: {:?}", &true));
-
-    // run web-server
-    web::run().expect(&fh!());
+    use std::path::PathBuf;
+    let consts_path = PathBuf::from("consts.toml");
+    let static_path = PathBuf::from("web_server/static/");
+    web::run_with(consts_path, static_path).expect(&fh!());
 
     ph!("exiting pdfgen..");
     Ok(())

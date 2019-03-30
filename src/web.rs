@@ -1,26 +1,37 @@
+use crate::{consts, dir_info};
 use actix_web as aweb;
 use failure::Error;
 use std::cell::Cell;
+use std::path::{Path, PathBuf};
 
 mod handler;
 
+#[derive(Debug, Clone)]
 pub struct AppState {
-    counter: Cell<usize>,
+    consts: consts::Consts,
+    dirs: Vec<dir_info::DirInfo>,
 }
 
 impl AppState {
-    fn new() -> Self {
-        AppState {
-            counter: Cell::new(0),
-        }
+    pub fn try_new(consts_path: PathBuf) -> Result<Self, Error> {
+        use std::convert::TryFrom;
+
+        // instantiate from a consts file
+        let consts = consts::Consts::try_from(consts_path.as_ref())?;
+        ph!("active langs\n{:?}", consts.get_active_langs());
+
+        // get all projects that may be worked with
+        let dirs: Vec<dir_info::DirInfo> = (&consts).into();
+
+        Ok(AppState { consts, dirs })
     }
 }
 
-pub fn run() -> Result<(), Error> {
+pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error> {
     ph!("starting web-server");
-    let _server = aweb::server::new(|| {
+    let _server = aweb::server::new(move || {
         vec![
-            aweb::App::with_state(AppState::new())
+            aweb::App::with_state(AppState::try_new(consts_path.clone()).expect(&fh!()))
                 .prefix("/app1")
                 .resource("/", |r| r.f(handler::index_state))
                 .resource("/", |r| r.f(handler::index_state))
@@ -28,15 +39,16 @@ pub fn run() -> Result<(), Error> {
             aweb::App::new()
                 .handler(
                     "/static/",
-                    aweb::fs::StaticFiles::new("web_server/static/")
+                    aweb::fs::StaticFiles::new(static_path.clone())
                         .expect(&fh!())
                         .show_files_listing(),
                 )
                 .boxed(),
         ]
     })
+    .workers(1)
     .bind("127.0.0.1:8088")
-    .unwrap()
+    .expect(&fh!())
     .run();
     ph!("web-server closed");
     Ok(())

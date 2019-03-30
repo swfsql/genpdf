@@ -3,6 +3,7 @@ use crate::VS;
 use regex::Regex;
 use semver;
 use std::convert::TryFrom;
+use std::path::Path;
 use tera::Tera;
 // use serde as serde_lib;
 use serde;
@@ -80,7 +81,6 @@ pub mod semver_serde {
     }
 }
 
-use std::path::Path;
 impl TryFrom<&Path> for Consts {
     type Error = failure::Error;
     fn try_from(path: &Path) -> Result<Self, Self::Error> {
