@@ -653,9 +653,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         //let cmd = format!("cd ../transifex && ls");
 
         let cmd = &format!(
-            "cd {cd} && xelatex main_ok.tex -halt-on-error --shell-escape",
+            r#"cd "{cd}" && xelatex -halt-on-error --shell-escape main_ok.tex "#,
             //let cmd = OsStr::new(&cmd);
-            cd = &cdpath.replace(" ", "^ ")[4..]
+            cd = &cdpath
         );
         //cd=&proj.dir[2..]);
         ph!("Command:\n{:?}", &cmd);
@@ -663,11 +663,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
 
         for i in 0..consts.passages {
-            let output = Command::new("cmd")
-                .args(&["/C", cmd])
-                //.args(&["/C", cmd.to_str().unwrap()])
-                .output()
-                .context(fh!("Falied to create tex file"))?;
+            ph!("passage {}", i);
+            let output = Command::new("sh").args(&["-c", cmd]).output().unwrap();
+            // .context(fh!("Falied to create pdf file"))?;
 
             if !output.status.success() {
                 let err_msg = fh!(

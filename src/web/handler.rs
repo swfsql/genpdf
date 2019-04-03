@@ -29,10 +29,15 @@ pub fn get_dirs(req: &aweb::HttpRequest<Arc<AppState>>) -> String {
     serde_json::to_string(&dirs.dirs).expect(&fh!())
 }
 
+// TODO: this is insecure. The received information should deal with
+// indexes only
 pub fn gen_projs(
-    (dirs, _req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
+    (dirs, req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
 ) -> aweb::Result<String> {
     ph!("gen proj!! {:?}", &dirs);
+    for dir in &dirs.dirs {
+        crate::temp::gen_proj(dir, &req.state().consts)?;
+    }
     Ok("nice".into())
 }
 

@@ -40,6 +40,13 @@
 
 \usepackage[flushmargin,multiple]{footmisc}
 \usepackage{bigfoot}
+
+% https://tex.stackexchange.com/a/403672
+\usepackage{xpatch}
+\makeatletter
+\xpatchcmd{\FN@allmarks}{266}{256}{}{}
+\makeatother
+
 \DeclareNewFootnote{default}
 \DeclareNewFootnote[para]{C}
 \DeclareNewFootnote[para]{B}[fnsymbol]

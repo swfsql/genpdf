@@ -1,3 +1,9 @@
+// TODO:
+// depends on ttf-linux-libertine package (Linux Libertine O font)
+// depends on fonts-tlwg package (for Norasi font)
+// depends on texlive-langchinese package (FandolFang-Regular font)
+// depends on otf-ipafont
+
 #[macro_use]
 extern crate failure;
 #[macro_use]
