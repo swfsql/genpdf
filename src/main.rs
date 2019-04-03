@@ -16,6 +16,7 @@ extern crate rayon;
 extern crate regex;
 extern crate semver;
 extern crate serde;
+extern crate serde_json;
 extern crate serde_yaml;
 extern crate toml;
 

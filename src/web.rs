@@ -28,13 +28,19 @@ impl AppState {
 }
 
 pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error> {
+    use std::sync::Arc;
+    let state = Arc::new(AppState::try_new(consts_path.clone()).expect(&fh!()));
     ph!("starting web-server");
     let _server = aweb::server::new(move || {
         vec![
-            aweb::App::with_state(AppState::try_new(consts_path.clone()).expect(&fh!()))
+            aweb::App::with_state(state.clone())
                 .prefix("/app1")
-                .resource("/", |r| r.f(handler::index_state))
-                .resource("/", |r| r.f(handler::index_state))
+                .resource("/", |r| r.f(handler::temporary_index))
+                .resource("/hello", |r| r.f(handler::index_state))
+                .resource("/dirs", |r| r.f(handler::get_dirs))
+                .resource("/gen_projs", |r| {
+                    r.method(aweb::http::Method::POST).with(handler::gen_projs)
+                })
                 .boxed(),
             aweb::App::new()
                 .handler(
@@ -46,7 +52,7 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
                 .boxed(),
         ]
     })
-    .workers(1)
+    // .workers(1)
     .bind("127.0.0.1:8088")
     .expect(&fh!())
     .run();
