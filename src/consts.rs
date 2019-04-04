@@ -1,4 +1,4 @@
-use crate::dir_info::Lang;
+use crate::dir_info;
 use crate::VS;
 use regex::Regex;
 use semver;
@@ -46,7 +46,7 @@ pub struct Consts {
     pub output_dir: String,
     pub initials: Vec<VS>,
     pub num_cpu: u8,
-    pub all_langs: Vec<Lang>,
+    pub all_langs: Vec<dir_info::Lang>,
 }
 
 use std::collections::HashSet;
@@ -90,7 +90,6 @@ impl TryFrom<&Path> for Consts {
     }
 }
 
-use crate::dir_info;
 impl Into<Vec<dir_info::DirInfo>> for &Consts {
     fn into(self) -> Vec<dir_info::DirInfo> {
         let consts = self;

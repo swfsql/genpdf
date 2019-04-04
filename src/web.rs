@@ -1,6 +1,6 @@
-use crate::{consts, dir_info};
 use actix_web as aweb;
 use failure::Error;
+use genpdf::{consts, dir_info};
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 

@@ -21,6 +21,7 @@ toml = "0.5.0"
 failure = "0.1.5"
 actix-web = "0.7"
 # futures = "0.1.25"
+language-tags = "0.2.2"
 
 # for thai language
 #chamkho = "0.1.0"

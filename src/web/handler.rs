@@ -1,7 +1,7 @@
 use super::AppState;
-use crate::dir_info;
 use actix_web as aweb;
 use failure::Error;
+use genpdf::dir_info;
 use serde_json;
 use std::sync::Arc;
 
@@ -36,7 +36,7 @@ pub fn gen_projs(
 ) -> aweb::Result<String> {
     ph!("gen proj!! {:?}", &dirs);
     for dir in &dirs.dirs {
-        crate::temp::gen_proj(dir, &req.state().consts)?;
+        genpdf::temp::gen_proj(dir, &req.state().consts)?;
     }
     Ok("nice".into())
 }
@@ -54,7 +54,7 @@ pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResp
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.3/dist/js/tabulator.min.js"></script>
         </head>
-        <body>
+        <body style="background-color:black;">
 
         <button id="get-selected">get</button>
         <button id="select-all">all</button>
