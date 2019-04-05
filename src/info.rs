@@ -157,7 +157,7 @@ pub enum TargetEngine {
     // powerful microtype
     Latex,
     // good multi-lang
-    Xetex,
+    Xelatex,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

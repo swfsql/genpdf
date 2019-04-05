@@ -212,7 +212,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     // TODO: other translations information (to link among themselves)
 
     for target in proj.info.targets.clone() {
-        let destination = format!("{}/tmp/{}", &proj.fulldir_str(), target.name);
+        let dashed_name = format!("{}-{}-{}", target.name, target.size, target.reader);
+        let destination = format!("{}/tmp/{}", &proj.fulldir_str(), dashed_name,);
         copy_files_except_tmp(
             &format!("{}/tmp/original", &proj.fulldir_str()),
             &destination,
@@ -222,7 +223,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 "Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.",
                 &proj.fulldir_str(),
                 &proj.fulldir_str(),
-                target.name,
+                dashed_name,
                 e
             )
         })?;
@@ -633,34 +634,34 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         ph!("start rendering");
 
         let mut rendered = consts::TERA
-            .render("main.tex", &def)
-            // .map_err(|_| format_err!("Failed to render the tex templates"))
+            .render(&format!("{}/main.tex", target.engine), &def)
             .unwrap();
+        // .map_err(|_| format_err!("Failed to render the tex templates"))
         // .context(fh!())?;
 
         rendered = consts::RE_FORWARD_ARROW
             .replace_all(&rendered, "{")
             .to_string(); // }
-        debug!("{}", rendered);
 
         ph!("finished rendering");
 
         let mut mdok = File::create(format!(
-            "{}/tmp/{}/main_ok.tex",
+            "{}/tmp/{}/main_ok_{}.tex",
             &proj.fulldir_str(),
-            target.name
+            dashed_name,
+            target.engine
         ))
-        .context(fh!("Falied to create tex file"))?;
+        .context(fh!("Falied to create latex file"))?;
 
         mdok.write_fmt(format_args!("{}", rendered))
-            .context(fh!("Failed to write on tex file"))?;
+            .context(fh!("Failed to write on {} tex file", target.engine))?;
 
-        info!("TeX file written.");
+        ph!("{} TeX file written.", target.engine);
 
         let cdpath = fs::canonicalize(format!(
             "{proj}/tmp/{tgt}",
             proj = &proj.fulldir_str(),
-            tgt = &target.name
+            tgt = &dashed_name
         ))
         .context(fh!("Failed to canonicalize the working project directory."))?
         .into_os_string()
@@ -668,24 +669,22 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         .map_err(|e| format_err!("Invalid working directory string path. Error: {:?}", e))
         .context(fh!())?;
 
-        //let cmd = format!("xelatex main_ok.tex -include-directory=\"{cd}\" -output-directory=\"{cd}\" -halt-on-error --shell-escape",
-        //let cmd = format!("xelatex \"{cd}\\main_ok.tex\" -halt-on-error --shell-escape",
-        //let cmd = format!("\"cd /d \"{cd}\" && xelatex main_ok.tex -halt-on-error --shell-escape\"",
-        //let cmd = format!("cd ../transifex && ls");
+        let cmd = match target.engine {
+            info::TargetEngine::Latex => format!(
+                r#"cd "{cd}" && pdflatex -halt-on-error --shell-escape main_ok_latex.tex "#,
+                cd = &cdpath
+            ),
+            info::TargetEngine::Xelatex => format!(
+                r#"cd "{cd}" && xelatex -halt-on-error --shell-escape main_ok_xelatex.tex "#,
+                cd = &cdpath
+            ),
+        };
 
-        let cmd = &format!(
-            r#"cd "{cd}" && xelatex -halt-on-error --shell-escape main_ok.tex "#,
-            //let cmd = OsStr::new(&cmd);
-            cd = &cdpath
-        );
-        //cd=&proj.dir[2..]);
         ph!("Command:\n{:?}", &cmd);
-
-        //xelatex main_ok.tex -include-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -output-directory="C:/Users/Thiago/Desktop/ancap.ch/transifex/from_th/the essay name/tmp/book" -halt-on-error --shell-escape
 
         for i in 0..consts.passages {
             ph!("passage {}", i);
-            let output = Command::new("sh").args(&["-c", cmd]).output().unwrap();
+            let output = Command::new("sh").args(&["-c", &cmd]).output().unwrap();
             // .context(fh!("Falied to create pdf file"))?;
 
             if !output.status.success() {
@@ -714,11 +713,12 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
                 ph!("preparing to copy a file..");
 
-                let extension = Path::new(&format!("{}/main_ok.pdf", &destination))
-                    .extension()
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string();
+                let extension =
+                    Path::new(&format!("{}/main_ok_{}.pdf", &destination, target.engine))
+                        .extension()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string();
 
                 let capitals = proj
                     .proj_dir
@@ -729,19 +729,20 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     "{}/{}/{}",
                     consts.output_dir, &def.def_lang.title, &capitals
                 );
-                let out_dest_file = format!("{}-{}.{}", &proj.proj_dir, target.name, extension);
+                let out_dest_file = format!("{}-{}.{}", &proj.proj_dir, dashed_name, extension);
                 let out_dest = format!("{}/{}", out_dest_dir, out_dest_file);
 
                 fs::create_dir_all(&out_dest_dir)
                     .context(fh!("Error when creating directories {}", &out_dest_dir))?;
 
                 fs::copy(
-                    &format!("{}/main_ok.pdf", &destination),
+                    &format!("{}/main_ok_{}.pdf", &destination, target.engine),
                     format!("{}", &out_dest),
                 )
                 .context(fh!(
-                    "Error when copying files from {}/main_ok.pdf into {}.",
+                    "Error when copying files from {}/main_ok_{}.pdf into {}.",
                     &destination,
+                    target.engine,
                     &out_dest
                 ))?;
 

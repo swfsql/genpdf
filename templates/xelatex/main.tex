@@ -73,7 +73,7 @@
 
 
 
-{% include "preamble/lang.tex" %}
+{% include "xelatex/preamble/lang.tex" %}
 
 % shortcuts
 \usepackage{xcolor}
@@ -88,9 +88,9 @@
 
 \setcounter{tocdepth}{->{{ info_target.toc_depth }}}
 
-{% include "preamble/footnote.tex" %}
+{% include "xelatex/preamble/footnote.tex" %}
 
-{% include "preamble/cover.tex" %}
+{% include "xelatex/preamble/cover.tex" %}
 
 
 \usepackage[footnotes,hybrid,underscores=false]{markdown}
@@ -154,7 +154,7 @@
 \chapterstyle{thatcher}
 \frontmatter
 
-{% include "cover/cover.tex" %}
+{% include "xelatex/cover/cover.tex" %}
 
 \tableofcontents
 
