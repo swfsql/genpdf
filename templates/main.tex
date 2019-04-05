@@ -4,17 +4,65 @@
 % https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz
 % https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
 
-{% if target == "book"  %}
-% \documentclass[a4paper]{book}%
-\documentclass[14pt,twoside,openright,a4paper]{memoir}% for print; chars per line = 66~72
-% \documentclass[14pt,twoside,openright,letterpaper]{memoir}% for print; TODO: cpl should be 66~72
-% \documentclass[14pt,oneside,openany,ebook]{memoir}% for computer; TODO: less margin; cpl should be 66~72
-% \documentclass[14pt,oneside,openany,ebook]{memoir}% for mobile; TODO: less margin; cpl should be 45~50
-{% elif target == "article"  %}
-\documentclass{article}%
-{% endif %}
+% TODO:
+% book/article cpl should be 66~72
+% phone cpl should be 45~50
 
-\usepackage{geometry}
+% book should have more margins
+% article/phone/digital should have less margins
+
+\documentclass[
+	{{ info_target.font_size }},
+	{% if info_target.reader == "print"  %}
+		% print settings
+		twoside,openright,
+	{% elif info_target.reader == "digital"  %}
+		% digital settings
+		oneside,openany,
+	{% else  %}
+		\invalidReader,
+	{% endif %}
+	{% if info_target.size == "hd720"  %}
+		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
+		ebook, % will still change in the geometry
+	{% elif info_target.size == "wxgap"  %}
+		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
+		ebook, % will still change in the geometry
+	{% else  %}
+		% some standard page_size setting
+		{{ info_target.size }},
+	{% endif %}
+]{memoir}
+
+\usepackage[
+	% page dimension
+	{% if info_target.size == "hd720"  %}
+		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
+		paperheight=13.1154870287in,
+		paperwidth=7.3774614536439in,
+		% left=0.3173cm, % TODO: decide what TODO..
+		% top=.266cm, % TODO: decide what TODO..
+		% right=0.4533cm, % TODO: decide what TODO..
+		% bottom=0.266cm, % TODO: decide what TODO..
+		% marginparwidth=0mm, % TODO: decide what TODO..
+		% marginparsep=0mm % TODO: decide what TODO..
+	{% elif info_target.size == "wxgap"  %}
+		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
+		paperheight=7.7765271812035in,
+		paperwidth=12.442443489926in,
+		% left=0.3173cm, % TODO: decide what TODO..
+		% top=.266cm, % TODO: decide what TODO..
+		% right=0.4533cm, % TODO: decide what TODO..
+		% bottom=0.266cm, % TODO: decide what TODO..
+		% marginparwidth=0mm, % TODO: decide what TODO..
+		% marginparsep=0mm % TODO: decide what TODO..
+	{% else  %}
+		% ..no need to change the page dimension
+		% the memoir setting should propagate. TODO: confirm this
+	{% endif %}
+	% page orientation
+	{{ info_target.orientation }}
+]{geometry}
 
 % info.target.reset_footer_active
 % info.target.reset_footer_depth: 0

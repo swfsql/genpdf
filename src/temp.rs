@@ -634,8 +634,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
         let mut rendered = consts::TERA
             .render("main.tex", &def)
-            .map_err(|_| format_err!("Failed to render the tex templates"))
-            .context(fh!())?;
+            // .map_err(|_| format_err!("Failed to render the tex templates"))
+            .unwrap();
+        // .context(fh!())?;
 
         rendered = consts::RE_FORWARD_ARROW
             .replace_all(&rendered, "{")
