@@ -11,6 +11,25 @@ use std::iter::FromIterator;
 use std::path::Path;
 use std::process::Command;
 
+pub fn clear_tmp(proj: &dir_info::DirInfo) -> Result<(), Error> {
+    let path = proj.fulldir().join("tmp");
+    // let path = format!("{}/tmp", proj.fulldir());
+    if Path::new(&path).exists() {
+        std::fs::remove_dir_all(&path).map_err(|e| {
+            format_err!(
+                "{}",
+                fh!(
+                    "Failed to clear the contents of {}/tmp directory. Due to {}.",
+                    proj.fulldir_str(),
+                    e
+                )
+            )
+        })
+    } else {
+        Ok(())
+    }
+}
+
 pub fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
     fs::create_dir_all(to) //
         .context(fh!("Failed to create a new {} directory.", to))?;
@@ -119,7 +138,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     info!("Working on project: {:?}\n", &proj);
 
     // if skip_templates && proj.proj_dir == "template"
-    if true && proj.proj_dir == "template" {
+    if proj.proj_dir == "template" {
         return Ok(());
     }
 
@@ -254,13 +273,11 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             &target.name
         );
 
-        let mut initial = if target.name == "article" {
-            false
-        } else if target.name == "book" {
-            true
-        } else {
-            false
+        let mut initial = match target.name {
+            info::TargetName::Article => false,
+            info::TargetName::Book => true,
         };
+
         let mut skip_initial = false;
         let mut sec_active = vec![false; 10];
 
@@ -464,16 +481,19 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 }
             };
 
-            if target.name == "article" {
-                s = s
-                    .lines()
-                    .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
-                    .collect::<String>();
-            } else if target.name == "book" {
-                s = s
-                    .lines()
-                    .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
-                    .collect::<String>();
+            match target.name {
+                info::TargetName::Article => {
+                    s = s
+                        .lines()
+                        .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
+                        .collect::<String>();
+                }
+                info::TargetName::Book => {
+                    s = s
+                        .lines()
+                        .map(|line| do_initial(&line, &"# ", &mut used_initials) + "\n")
+                        .collect::<String>();
+                }
             }
 
             // section clearing (new page, reset footer)

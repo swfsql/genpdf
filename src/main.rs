@@ -19,8 +19,6 @@ extern crate actix_web;
 extern crate env_logger;
 extern crate serde_json;
 
-extern crate language_tags;
-
 #[macro_use]
 mod macros;
 

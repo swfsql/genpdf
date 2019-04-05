@@ -1,4 +1,4 @@
-min_ver = "0.1.4"
+min_ver = "0.1.5"
 
 # minimum of 2 is needed to the cover and summary and footnotes to get alright
 passages = 2 
@@ -25,6 +25,9 @@ initials = [
 num_cpu = 2
 
 # ---------------------------------------------------------------------------
+
+# TODO: refactor this structure
+# may remove the "from_url"
 
 [[all_langs]]
 from_active = false
@@ -55,7 +58,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ceb"
 set_lang = "tagalog" 
 title = "Cebuano"
@@ -73,7 +76,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "de"
 set_lang = "german" 
 title = "German"
@@ -136,7 +139,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "es-ES"
 set_lang = "spanish"
 title = "Spanish"
@@ -172,7 +175,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "fil"
 set_lang = "tagalog"
 title = "Filipino"
@@ -181,7 +184,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "fr"
 set_lang = "french"
 title = "French"
@@ -190,7 +193,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ha"
 set_lang = "english"
 title = "Hausa"
@@ -208,7 +211,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "id"
 set_lang = "bahasai"
 title = "Indonesian"
@@ -217,7 +220,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ig"
 set_lang = "english"
 title = "Igbo"
@@ -226,7 +229,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "it"
 set_lang = "italian"
 title = "Italian"
@@ -235,7 +238,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ja"
 set_lang = ""
 title = "Japanese"
@@ -262,7 +265,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ms"
 set_lang = "bahasam"
 title = "Malay"
@@ -280,7 +283,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "nl"
 set_lang = "dutch"
 title = "Dutch"
@@ -289,7 +292,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "pcm"
 set_lang = "english"
 title = "Nigerian Pidgin"
@@ -298,7 +301,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "pl"
 set_lang = "polish"
 title = "Polish"
@@ -307,7 +310,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "pt-BR"
 set_lang = "brazil" 
 title = "Portuguese (Brazilian)"
@@ -316,7 +319,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "pt-PT"
 set_lang = "portuges"
 title = "Portuguese"
@@ -334,7 +337,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ru"
 set_lang = "russian"
 title = "Russian"
@@ -352,7 +355,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "tl"
 set_lang = ""
 title = "Tagalog"
@@ -361,7 +364,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "tr"
 set_lang = "turkish"
 title = "Turkish"
@@ -370,7 +373,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ur-IN"
 set_lang = "urdu"
 title = "Urdu (India)"
@@ -379,7 +382,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "ur-PK"
 set_lang = "urdu"
 title = "Urdu (Pakistan)"
@@ -388,7 +391,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "vi"
 set_lang = "vietnamese"
 title = "Vietnamese"
@@ -397,7 +400,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "yo"
 set_lang = "english"
 title = "Yoruba"
@@ -406,7 +409,7 @@ from_dir_name = ""
 
 [[all_langs]]
 from_active = false
-to_active = true
+to_active = false # true
 to_dir_name = "zh-CN"
 set_lang = ""
 title = "Chinese Simplified"

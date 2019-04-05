@@ -1,5 +1,6 @@
 use crate::{OVS, VS};
 use semver;
+use std::string::ToString;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]
@@ -50,21 +51,124 @@ pub struct InfoCover {
     pub cover_dimensions: Vec<u32>,
 }
 
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "snake_case")]
+pub enum TargetName {
+    // more clearpages
+    Book,
+    // less clearpages
+    Article,
+}
+
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "snake_case")]
+pub enum TargetSize {
+    A0paper,
+    A1paper,
+    A2paper,
+    A3paper,
+    A4paper,
+    A5paper,
+    A6paper,
+    B0paper,
+    B1paper,
+    B2paper,
+    B3paper,
+    B4paper,
+    B5paper,
+    B6paper,
+    C0paper,
+    C1paper,
+    C2paper,
+    C3paper,
+    C4paper,
+    C5paper,
+    C6paper,
+    B0j,
+    B1j,
+    B2j,
+    B3j,
+    B4j,
+    B5j,
+    BBj,
+    Ansiapaper,
+    Ansibpaper,
+    Ansicpaper,
+    Ansidpaper,
+    Ansiepaper,
+    Letterpaper,
+    Executivepaper,
+    Legalpaper,
+    // HD720 are into A4paper area
+    // = 7.3774614536439in x 13.1154870287in (portrait)
+    // = 1280 x 720 = 16 x 9 (landscape)
+    Hd720,
+    // WXGA+ area into A4 paper area
+    // = 7.7765271812035 x 12.442443489926 (portrait)
+    // = 1440 x 1050 = 16 x 10 (landscape)
+    Wxgap,
+}
+
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "snake_case")]
+pub enum TargetOrientation {
+    Portrait,  // normal print
+    Landscape, // widescreen-like
+}
+
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "camel_case")]
+pub enum TargetFontSize {
+    #[serde(rename = "8pt")]
+    _8pt,
+    #[serde(rename = "9pt")]
+    _9pt,
+    #[serde(rename = "10pt")]
+    _10pt,
+    #[serde(rename = "11pt")]
+    _11pt,
+    #[serde(rename = "12pt")]
+    _12pt,
+    #[serde(rename = "14pt")]
+    _14pt,
+    #[serde(rename = "17pt")]
+    _17pt,
+    #[serde(rename = "20pt")]
+    _20pt,
+}
+
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "snake_case")]
+pub enum TargetReader {
+    // twoside, openright
+    Print,
+    // oneside, openany
+    Digital,
+}
+
+#[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "snake_case")]
+pub enum TargetEngine {
+    // powerful microtype
+    Latex,
+    // good multi-lang
+    Xetex,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct InfoTarget {
-    // TODO: replace by enum
-    /// eg. "book"
-    pub name: String,
-
-    // TODO: replace by enum
-    /// eg. "a4paper"
-    pub size: String,
-
-    // TODO: replace by enum
-    /// eg. "print"
-    pub reader: String,
-
+    pub name: TargetName,
+    pub size: TargetSize,
+    pub orientation: TargetOrientation,
+    pub font_size: TargetFontSize,
+    pub reader: TargetReader,
+    pub engine: TargetEngine,
     pub reset_footer_active: bool,
     pub reset_footer_depth: u8,
     pub clear_page_active: bool,

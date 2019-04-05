@@ -41,6 +41,16 @@ pub fn gen_projs(
     Ok("nice".into())
 }
 
+pub fn clear_projs(
+    (dirs, req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
+) -> aweb::Result<String> {
+    ph!("clear proj!! {:?}", &dirs);
+    for dir in &dirs.dirs {
+        genpdf::temp::clear_tmp(dir)?;
+    }
+    Ok("nice".into())
+}
+
 // TODO: properly move this into a proper Tera+bootstrap template
 // and also ajax request into the get_dirs
 pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResponse {
@@ -56,9 +66,10 @@ pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResp
         </head>
         <body style="background-color:black;">
 
-        <button id="get-selected">get</button>
+        <button id="get-selected">gen</button>
         <button id="select-all">all</button>
         <button id="deselect-all">none</button>
+        <button id="clean-selected">clean</button>
         <div id="example-table"></div>
 
         <script>
@@ -99,6 +110,20 @@ pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResp
             $.ajax({{
                 type: "POST",
                 url: "gen_projs",
+                data: JSON.stringify( {{ dirs: selected_data }} ),
+                // data: {{ dirs: selected_data }},
+                success: null,
+                dataType: "json",
+                contentType: "application/json"
+            }});
+        }});
+
+        $("#clean-selected").click(function(){{
+            var selected_data = table.getSelectedData();
+            console.log(selected_data);
+            $.ajax({{
+                type: "POST",
+                url: "clear_projs",
                 data: JSON.stringify( {{ dirs: selected_data }} ),
                 // data: {{ dirs: selected_data }},
                 success: null,

@@ -10,12 +10,16 @@ extern crate serde_derive;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate strum_macros;
 
 extern crate image;
 extern crate regex;
 extern crate semver;
 extern crate serde;
+extern crate strum;
 
+extern crate isolang;
 extern crate language_tags;
 
 #[macro_use]

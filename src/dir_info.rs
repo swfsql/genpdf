@@ -1,4 +1,5 @@
 use crate::{consts, info};
+use language_tags::LanguageTag;
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -17,7 +18,7 @@ pub struct Lang {
 pub struct Defaults {
     pub info: info::Info,
     pub info2: info::Info2,
-    pub target: String,
+    pub target: info::TargetName,
     pub info_target: info::InfoTarget,
 
     pub sent_initial: String,

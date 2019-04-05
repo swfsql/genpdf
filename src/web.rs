@@ -41,6 +41,10 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
                 .resource("/gen_projs", |r| {
                     r.method(aweb::http::Method::POST).with(handler::gen_projs)
                 })
+                .resource("/clear_projs", |r| {
+                    r.method(aweb::http::Method::POST)
+                        .with(handler::clear_projs)
+                })
                 .boxed(),
             aweb::App::new()
                 .handler(

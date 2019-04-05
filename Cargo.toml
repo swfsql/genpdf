@@ -22,6 +22,9 @@ failure = "0.1.5"
 actix-web = "0.7"
 # futures = "0.1.25"
 language-tags = "0.2.2"
+isolang = "1.0.0"
+strum = "0.15.0"
+strum_macros = "0.15.0"
 
 # for thai language
 #chamkho = "0.1.0"
