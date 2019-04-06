@@ -1,4 +1,6 @@
+use crate::dir_info;
 use crate::{OVS, VS};
+use dir_info::LanguageTag;
 use semver;
 use std::string::ToString;
 
@@ -7,7 +9,11 @@ use std::string::ToString;
 pub struct InfoTranslation {
     // TODO: replace by enum
     /// eg. "tl"
-    pub language: String,
+    #[serde(with = "dir_info::langtag_serde")]
+    pub language: LanguageTag,
+
+    #[serde(with = "dir_info::langtagvec_serde")]
+    pub other_languages: Vec<LanguageTag>,
 
     pub is_translation: bool,
 

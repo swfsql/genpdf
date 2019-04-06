@@ -1,0 +1,173 @@
+﻿% !TEX TS-program = LaTeX
+
+% LianTze Lim templates helped a lot!
+% https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz
+% https://www.overleaf.com/blog/441-how-to-write-in-markdown-on-overleaf
+
+% TODO:
+% book/article cpl should be 66~72
+% phone cpl should be 45~50
+
+% book should have more margins
+% article/phone/digital should have less margins
+
+\documentclass[
+	{{ info_target.font_size }},
+	{% if info_target.reader == "print"  %}
+		% print settings
+		twoside,openright,
+	{% elif info_target.reader == "digital"  %}
+		% digital settings
+		oneside,openany,
+	{% else  %}
+		\invalidReader,
+	{% endif %}
+	{% if info_target.size == "hd720"  %}
+		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
+		ebook, % will still change in the geometry
+	{% elif info_target.size == "wxgap"  %}
+		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
+		ebook, % will still change in the geometry
+	{% else  %}
+		% some standard page_size setting
+		{{ info_target.size }},
+	{% endif %}
+]{memoir}
+
+\usepackage[
+	% page dimension
+	{% if info_target.size == "hd720"  %}
+		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
+		paperheight=13.1154870287in,
+		paperwidth=7.3774614536439in,
+		% left=0.3173cm, % TODO: decide what TODO..
+		% top=.266cm, % TODO: decide what TODO..
+		% right=0.4533cm, % TODO: decide what TODO..
+		% bottom=0.266cm, % TODO: decide what TODO..
+		% marginparwidth=0mm, % TODO: decide what TODO..
+		% marginparsep=0mm % TODO: decide what TODO..
+	{% elif info_target.size == "wxgap"  %}
+		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
+		paperheight=7.7765271812035in,
+		paperwidth=12.442443489926in,
+		% left=0.3173cm, % TODO: decide what TODO..
+		% top=.266cm, % TODO: decide what TODO..
+		% right=0.4533cm, % TODO: decide what TODO..
+		% bottom=0.266cm, % TODO: decide what TODO..
+		% marginparwidth=0mm, % TODO: decide what TODO..
+		% marginparsep=0mm % TODO: decide what TODO..
+	{% else  %}
+		% ..no need to change the page dimension
+		% the memoir setting should propagate. TODO: confirm this
+	{% endif %}
+	% page orientation
+	{{ info_target.orientation }}
+]{geometry}
+
+% info.target.reset_footer_active
+% info.target.reset_footer_depth: 0
+
+% info.target.clear_page_active: true
+% info.target.clear_page_depth: 1
+
+
+
+
+{% include "latex/preamble/lang.tex" %}
+
+% shortcuts
+\usepackage{xcolor}
+\usepackage{latexsym}
+% \def \utfbox {\nopagebreak\hfill □}
+\def \utfboxraw {\hfill\color{black!08}$\Box$\color{black}}
+\def \utfbox {\nopagebreak\utfboxraw}
+\def \texthash {\#}
+
+\def \endsec {\utfbox\clearpage}
+\def \endfoot {\setcounter{footnote}{0}}
+
+\setcounter{tocdepth}{->{{ info_target.toc_depth }}}
+
+{% include "latex/preamble/footnote.tex" %}
+
+{% include "latex/preamble/cover.tex" %}
+
+
+\usepackage[footnotes,hybrid,underscores=false]{markdown}
+%\usepackage[hybrid]{markdown}
+\markdownSetup{
+	rendererPrototypes={
+    	link = {(links nor wotking for now)}
+    	% link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+	},
+	renderers = {
+		olItemWithNumber = {\item},
+	}
+}
+
+
+
+\usepackage[hidelinks]{hyperref}
+
+
+\usepackage[protrusion=true,final]{microtype}
+
+
+
+% \usepackage{xepersian}
+% \defpersianfont\nastaligh[Language=Default]{IranNastaliq}
+% \renewcommand{\LettrineFontHook}{\nastaligh\color{red}}
+
+% https://ctan.org/pkg/xecyr % Using Cyrillic languages in XeTeX
+% https://ctan.org/pkg/xgreek % LaTeX package for typesetting Greek language documents (beta release)
+
+
+
+\usepackage{lettrine}
+
+
+{% if sent_initial == "Zallman"  %}
+\input Zallman.fd
+\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
+\renewcommand{\LettrineFontHook}{\initialsfamily}
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
+{% else %}
+\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
+{% endif %}
+
+% prev loversize: +0.115
+
+% \newfont{\initial}{wcmr17 at 48pt}
+% \newcommand{\frstltr}[1]{
+%     \newbox{\litera}
+%     \savebox{\litera}{\hbox #1}
+%     % \savebox{\litera}{\hbox{\initial #1}}
+%     \vspace*{.2\ht\litera}\par\noindent
+%     \begin{wrapfigure}{l}{.8\wd\litera}
+%     \vbox to .05\ht\litera{\vss\usebox{\litera}\vspace*{-.65\ht\litera}}
+%     \vspace*{-.2\ht\litera}
+%     \end{wrapfigure}}
+% \frstltr{Д}олжно работать!
+
+\begin{document}%
+
+\chapterstyle{thatcher}
+\frontmatter
+
+{% include "latex/cover/cover.tex" %}
+
+\tableofcontents
+
+{% if target == "book"  %}
+	\clearpage
+{% elif target == "article"  %}
+{% endif %}
+
+{% for md in info.content_files %}
+	{% if loop.index0 == info_target.frontmatter_depth %}
+		\mainmatter
+	{% endif %}
+\markdownInput{->{{md.0}}}%
+{% endfor %}
+
+\end{document}

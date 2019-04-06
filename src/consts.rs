@@ -6,6 +6,7 @@ use std::convert::TryFrom;
 use std::path::Path;
 use tera::Tera;
 // use serde as serde_lib;
+use dir_info::LanguageTag;
 use serde;
 
 // from_dir is used as:
@@ -51,10 +52,10 @@ pub struct Consts {
 
 use std::collections::HashSet;
 impl Consts {
-    pub fn get_active_langs(&self) -> HashSet<&String> {
+    pub fn get_active_langs(&self) -> HashSet<LanguageTag> {
         self.all_langs.iter().fold(HashSet::new(), |mut hs, l| {
             if l.to_active {
-                hs.insert(&l.to_dir_name);
+                hs.insert(l.to_dir_name.clone().into());
                 hs
             } else {
                 hs
@@ -117,10 +118,18 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                 let oks: Vec<dir_info::DirInfo> = dir
                     .into_iter()
                     .filter_map(|lang_dir| {
+                        ph!("{:?}", lang_dir);
+
+                        let lang_dir: std::fs::DirEntry =
+                            lang_dir.expect(&fh!("Failed to open language directory"));
+
+                        // only accept directories
+                        if lang_dir.metadata().expect(&fh!()).is_file() {
+                            return None;
+                        }
+
                         // eg. "$ANCAP/to_dir/from_en/fa"
-                        let lang_dir = lang_dir
-                            .expect(&fh!("Failed to open language directory"))
-                            .path();
+                        let lang_dir = lang_dir.path();
 
                         // eg. "fa"
                         let lang_dir_name = lang_dir
@@ -128,6 +137,17 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                             .expect(&fh!())
                             .to_string_lossy()
                             .to_string();
+
+                        // ignore some specific dirs
+                        if lang_dir_name == ".git" || lang_dir_name == "_asset" {
+                            return None;
+                        }
+
+                        use std::str::FromStr;
+                        let lang_dir_name = LanguageTag::from_str(&lang_dir_name)
+                            .expect(&fh!("{:?}", &lang_dir_name));
+                        // .map_err(wfeh!())?;
+                        let lang_dir_name: LanguageTag = lang_dir_name.into();
 
                         // filter out if such to_lang is deactivated
                         if !consts.get_active_langs().contains(&lang_dir_name) {
@@ -192,13 +212,13 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                                 let dir_info = dir_info::DirInfo {
                                     base_dir: format!("{}", &consts.all_langs_to_dir),
                                     from_dir: format!("{}", &from_dir_name),
-                                    lang_dir: format!("{}", &lang_dir_name),
+                                    lang_dir: format!("{}", &lang_dir_name.to_string()),
                                     proj_dir: format!("{}", &proj_dir_name),
                                     info: info,
                                 };
 
                                 // ph!("\ninfo:\n{:?}\n", &dir_info.info);
-                                ph!("read info for a project in {}", &lang_dir_name);
+                                ph!("read info for a project in {}", &lang_dir_name.to_string());
 
                                 return Some(dir_info);
                             })
@@ -245,6 +265,7 @@ lazy_static! {
     pub static ref RE_SYMB_COLON_2: Regex = Regex::new("\n::(.*?)::\n").unwrap();
     pub static ref RE_SYMB_COLON_2_INLINE: Regex = Regex::new("::(.*?)::").unwrap();
     pub static ref RE_SYMB_BSLASH: Regex = Regex::new("\\\\").unwrap();
+    pub static ref RE_SYMB_BSLASH2: Regex = Regex::new("\\\\textbackslash \\\\textbackslash ").unwrap();
     pub static ref RE_SYMB_FI: Regex = Regex::new("fi").unwrap();
     pub static ref RE_CHAR_I_DOTLESS: Regex = Regex::new("I").unwrap();
     pub static ref RE_CHAR_i_DOTTED: Regex = Regex::new("i").unwrap();

@@ -1,0 +1,162 @@
+
+
+
+\pdfminorversion=6
+\pdfcompresslevel=9
+\pdfobjcompresslevel=3
+
+% ---------------------------------------------------------
+
+
+\usepackage[utf8]{inputenc}
+
+% TODO: first check if latin is to be used
+\usepackage{libertine}
+\usepackage{libertinust1math}
+
+\usepackage[T1]{fontenc}
+
+
+
+
+% useful commands:
+
+% TODO: all languages that are to be used must be declared
+% at the beggining
+% and the last one is the main one
+
+% \selectlanguage{czech}
+% % changes the "complete setup" to the language "from now on"
+% % for a kind of less-instrudive, you may do a:
+% {\selectlanguage{czech} blablabla }\selectlanguage{english}
+
+% \selectlanguage{english}
+% % changes the "complete setup" to the language "from now on"
+
+% % if more power is needed, such as changing left->right to right->left,
+% % use something like
+% \begin{otherlanguage}{hebrew}
+%  blablabla
+% \end{otherlanguage}
+%
+%
+
+% % if only a small snippet is desired, without changing "too much", then
+%
+% \begin{otherlanguage*}{thai}
+%  blablabla
+% \end{otherlanguage*}
+% % you may also enclose with braces, so it's more "local"
+%
+% % or else,
+%
+% \foreignlanguage{thai}{blablabla}
+% % this does not change names nor dates
+% % does not really require the language to be loaded
+% 
+
+
+
+
+
+
+% ---------------------------------------------------------
+
+
+
+
+
+{% if def_lang.to_dir_name == "jp"  %}
+\usepackage[japanese]{babel}
+{% else %}
+\usepackage{polyglossia}%
+{% endif %}
+
+
+\usepackage{fontspec}%
+\usepackage[space,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
+\usepackage[Latin, Thai]{ucharclasses}% TODO: add CJK
+
+\usepackage{xltxtra}
+
+% installed fonts: 
+% fandol and wadalab (cjk-fonts)
+% Linux Libertine OpenType
+% IPAex font OTF http://ipafont.ipa.go.jp/
+% tlwg OTF fonts https://www.hawaii.edu/thai/thaifonts/ 
+%  ftp://linux.thai.net/pub/thailinux/software/fonts-tlwg/fonts/
+
+{% if def_lang.to_dir_name == "jp"  %}
+\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
+\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\setCJKmonofont[Script=CJK]{MS Gothic}
+\XeTeXlinebreaklocale "ja"  %% Zeilenumbruch für japanische Texte
+\XeTeXlinebreakskip=0em plus 0.1em minus 0.01em
+\usepackage{setspace}
+{% elif def_lang.to_dir_name == "zh-CN" %}
+%\setCJKmainfont[
+%  BoldFont=WenQuanYi Zen Hei,
+%  ItalicFont=AR PL KaitiM GB]
+%  {AR PL SungtiL GB}
+%\setCJKsansfont{Noto Sans CJK SC}
+%\setCJKmonofont{cwTeXFangSong}
+{% elif def_lang.to_dir_name == "th" %}
+\setmainlanguage[numerals=thai]{->{{def_lang.set_lang}}}% thai
+\XeTeXlinebreaklocale "th_TH"
+\XeTeXlinebreakskip = 0pt plus 1pt  
+{% elif def_lang.to_dir_name == "bn" %}
+\setmainlanguage[changecounternumbering=true]{->{{def_lang.set_lang}}}% bengali
+{% elif def_lang.to_dir_name == "de" %}
+\setmainlanguage[script=fraktur]{->{{def_lang.set_lang}}}% german
+{% elif def_lang.to_dir_name == "my" %} % burmese
+\XeTeXlinebreaklocale "my"
+\XeTeXlinebreakskip = 0pt plus 0.1pt  
+{% else %}
+\setmainlanguage{->{{def_lang.set_lang}}}%
+{% endif %}
+
+
+{% if def_lang.to_dir_name != "en"  %}
+\setotherlanguage{english}%
+{% endif %}
+
+{% if def_lang.to_dir_name == "jp"  %}
+{% elif def_lang.to_dir_name == "zh" %}
+{% else %}
+    {% for lang in other_langs %}
+        {% if lang.to_dir_name == "jp"  %}
+
+\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
+\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
+\setCJKmonofont[Script=CJK]{MS Gothic}
+\setotherlanguage{->{{lang.set_lang}}}%
+        {% elif lang.to_dir_name == "zh"  %}
+        {% elif lang.to_dir_name == "ko"  %}
+        {% else %}
+% \setotherlanguage{->{{lang.set_lang}}}%
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+\defaultfontfeatures{Ligatures=TeX}%
+
+
+\newfontfamily\defaultfont{Linux Libertine O}% Code2000
+\newfontfamily\latinfont{Linux Libertine O}%
+\newfontfamily\thaifont[Script=Thai]{Norasi}%
+\newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}%
+\newfontfamily\cyrillicfont[Script=Cyrillic]{Linux Libertine O}% not tested
+\newfontfamily{\cyrillicfonttt}[Script=Cyrillic]{Linux Libertine O}% not tested
+%\newfontfamily{\cjkfont}{HAN NOM A}
+%\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
+%\newCJKfontfamily\japanesefont{IPAex明朝}
+%\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
+%\newCJKfontfamily\koreafont{Baekmuk Batang}
+
+\setDefaultTransitions{\defaultfont}{}
+
+\setTransitionsForLatin{\latinfont}{}
+%\setTransitionsForCJK{\cjkfont}{}
+%\setTransitionsForJapanese{\japanesefont}{}
+%\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
+\setTransitionTo{Thai}{\thaifont}

@@ -27,7 +27,7 @@ mod web;
 use failure::Error;
 
 fn main() -> Result<(), Error> {
-    env_logger::init().unwrap();
+    env_logger::init().expect(&fh!());
 
     use std::path::PathBuf;
     let consts_path = PathBuf::from("consts.toml");

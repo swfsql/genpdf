@@ -1,0 +1,65 @@
+
+% usado para a capa...
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{varwidth}
+\pgfdeclarelayer{bg}    % declare background layer
+\pgfdeclarelayer{front} 
+\pgfsetlayers{bg,main,front}  % set the order of the layers (main is the standard layer)
+
+
+
+\usetikzlibrary{calc}
+\usepackage{graphicx}
+\usepackage{calc}
+\usepackage{ifthen}
+
+
+%\DeclareUrlCommand\Hurl{->%
+%  \def\UrlLeft{\langle}%
+%  \def\UrlRight{\rangle}%
+%}
+%\renewcommand*{\UrlFont}{\ttfamily\scriptsize\relax}
+
+
+
+\newlength{\oH}
+\newlength{\oW}
+\newlength{\rH}
+\newlength{\rW}
+\newlength{\cH}
+\newlength{\cW}
+\newcommand\ClipImage[3]{->% width, height, image
+\settototalheight{\oH}{\includegraphics{->#3}}%
+\settowidth{\oW}{\includegraphics{->#3}}%
+\setlength{\rH}{\oH * \ratio{->#1}{\oW}}%
+\setlength{\rW}{\oW * \ratio{->#2}{\oH}}%
+\ifthenelse{\lengthtest{\rH < #2}}{->%
+    \setlength{\cW}{(\rW-#1)*\ratio{\oH}{->#2}}%
+    \adjincludegraphics[height=#2,clip,trim=0 0 \cW{} 0]{->#3}%
+}{->%
+    \setlength{\cH}{(\rH-#2)*\ratio{\oW}{->#1}}%
+    \adjincludegraphics[width=#1,clip,trim=0 \cH{} 0 0]{->#3}%
+}%
+}
+
+
+
+
+% para listar o link da discussão e a data:
+\makeatletter
+\def\blfootnote{\xdef\@thefnmark{->$ \sim $}\@footnotetext}
+\makeatother
+% https://tex.stackexchange.com/questions/250221/supressing-the-footnote-number
+
+
+
+
+\usepackage{arrayjob}
+\usepackage{calc}
+
+
+
+
+
+

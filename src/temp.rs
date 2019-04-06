@@ -32,31 +32,32 @@ pub fn clear_tmp(proj: &dir_info::DirInfo) -> Result<(), Error> {
 
 pub fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
     fs::create_dir_all(to) //
-        .context(fh!("Failed to create a new {} directory.", to))?;
+        .with_context(wfh!("Failed to create a new {} directory.", to))?;
 
     let dir = Path::new(from);
     let dirs = read_dir(&dir) //
-        .context(fh!(
+        .with_context(wfh!(
             "Failed to start copying {} contents into the tmp directory.",
             from
         ))?;
 
     for path in dirs {
         let path = path //
-            .context(fh!("Failed to open a file."))?;
+            .with_context(wfh!("Failed to open a file."))?;
         if path.path().ends_with("tmp") {
             continue;
         }
-        let dst = Path::new(to).join(path.path().file_name().unwrap());
+        let dst = Path::new(to).join(path.path().file_name().expect(&fh!()));
         let meta = path
             .metadata()
-            .context(fh!("Failed to read {} metadata.", path.path().display()))?;
+            .with_context(wfh!("Failed to read {} metadata.", path.path().display()))?;
         if meta.is_dir() {
-            fs::create_dir(&dst).context(fh!("Failed to create a new {:?} directory.", &dst))?;
+            fs::create_dir(&dst)
+                .with_context(wfh!("Failed to create a new {:?} directory.", &dst))?;
         } else {
             let orig = path.path();
             fs::copy(&orig, &dst) //
-                .context(fh!("Failed to copy {:?} into {:?} folder.", &orig, &dst))?;
+                .with_context(wfh!("Failed to copy {:?} into {:?} folder.", &orig, &dst))?;
         }
     }
     Ok(())
@@ -73,9 +74,9 @@ pub fn chk_footnote_proj(
             .iter()
             .map(|vs| vs[0].clone())
             .map(|md| {
-                let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).unwrap();
+                let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).expect(&fh!());
                 let mut contents = String::new();
-                file.read_to_string(&mut contents).unwrap();
+                file.read_to_string(&mut contents).with_context(wfh!());
 
                 // TODO: try using scan again >_> damn you lifetimes
                 let mut foots = vec![];
@@ -146,13 +147,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         &proj.fulldir_str(),
         &format!("{}/tmp/original", &proj.fulldir_str()),
     )
-    .with_context(|e| {
-        fh!(
-            "Error when copying files into {}/tmp/dir folder. Due to {}.",
-            &proj.fulldir_str(),
-            e
-        )
-    })?;
+    .with_context(wfh!(
+        "Error when copying files into {}/tmp/dir folder.",
+        &proj.fulldir_str(),
+    ))?;
 
     ph!("res: <{:?}>", proj.info.resources);
     if let &Some(ref ress) = &proj.info.resources {
@@ -167,7 +165,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
                         ph!("antes de copiar");
                         fs::copy(&format!("{}", &origin), &format!("{}", &dest)) //
-                            .context(fh!(
+                            .with_context(wfh!(
                                 "Error when copying files from {} into {}.",
                                 &origin,
                                 &dest
@@ -186,7 +184,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             if let &Some(ref rule) = &p.rule {
                 if rule == "author" {
                     let person = info::InfoPerson2 {
-                        name: p.identifier.clone().unwrap(),
+                        name: p.identifier.clone().ok_or(feh!())?,
                     };
                     authors.push(person);
                 }
@@ -207,7 +205,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         .ok_or(format_err!(
             "Failed to get the default language information from preset"
         ))
-        .context(fh!())?;
+        .with_context(wfh!())?;
 
     // TODO: other translations information (to link among themselves)
 
@@ -218,15 +216,12 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             &format!("{}/tmp/original", &proj.fulldir_str()),
             &destination,
         )
-        .with_context(|e| {
-            fh!(
-                "Error when copying files from {}/tmp/original into {}/tmp/{}. Due to {}.",
-                &proj.fulldir_str(),
-                &proj.fulldir_str(),
-                dashed_name,
-                e
-            )
-        })?;
+        .with_context(wfh!(
+            "Error when copying files from {}/tmp/original into {}/tmp/{}.",
+            &proj.fulldir_str(),
+            &proj.fulldir_str(),
+            dashed_name,
+        ))?;
 
         ph!("target: <{:?}>", target);
         // TODO: crop and/or resize the cover images, and replace them
@@ -236,13 +231,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut crop;
             {
                 let mut img = image::open(&img_filepath) //
-                    .with_context(|e| {
-                        fh!(
-                            "Error when opening image file from {}. Due to {}.",
-                            &img_filepath,
-                            e
-                        )
-                    })?;
+                    .with_context(wfh!(
+                        "Error when opening image file from {}.",
+                        &img_filepath
+                    ))?;
                 let (offsetx, offsety) = (cover.cover_dimensions[0], cover.cover_dimensions[1]);
                 let (width, height) = img.dimensions();
                 let width = if cover.cover_dimensions[2] == 0 {
@@ -259,13 +251,12 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 crop = imageops::crop(&mut img, offsetx, offsety, width, height).to_image();
             }
             crop.save(&img_filepath) //
-                .with_context(|e| {
-                    fh!(
-                        "Error when saving image file to {}. Due to {}.",
-                        &img_filepath,
-                        e
+                .with_context(
+                    wfh!(
+                        "Error when saving image file to {}.",
+                        &img_filepath
                     )
-                })?;
+                )?;
         }
 
         ph!(
@@ -273,6 +264,153 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             &proj.fulldir_str(),
             &target.name
         );
+
+        // setup language change
+        for content in proj.info.content_files.iter().map(|c| &c[0]) {
+            let path = format!("{}/{}", &destination, &content);
+
+            let mut os = std::fs::read_to_string(&path).with_context(wfh!())?;
+
+            // adds new line around each file
+            // so additions may happen in a sole line
+            os = format!("\n\n{}\n\n", os);
+
+            let mut ns = String::new();
+            let mut file = File::create(&path) //
+                .with_context(wfh!("failed to overwrite content file"))?;
+
+            use std::convert::TryInto;
+            use whatlang::Script;
+
+            let base: whatlang::Lang = proj.info.translation.language.clone().try_into()?;
+
+            let mut whitelist: Vec<whatlang::Lang> = proj
+                .info
+                .translation
+                .other_languages
+                .iter()
+                .cloned()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?;
+            // pushes the base language
+            whitelist.push(base.clone());
+
+            let opt = whatlang::Options::new().set_whitelist(whitelist);
+
+            let mut previous_lang = base.clone();
+            let mut previous_script: Option<Script> = None;
+
+            // get ponctuation positions, except for ' ponctuation
+            let (mut ponctuations, last) = os
+                .chars()
+                .enumerate()
+                .filter(|(_index, c)| !c.is_alphanumeric() && c != &'\'' && !c.is_whitespace())
+                .collect::<Vec<_>>()
+                .into_iter()
+                // the objective is to ignore consecutive ponctuations,
+                // in a way that only the first ponctuation is included
+                //
+                // for this, we reverse them and compare "new" ones (originally earlier)
+                // with "last" ones (originally later),
+                // and we do not add some of those "last" ones
+                // those "last" who are replaced with the "new" ones for the next
+                // iteration are ignored from the collection.
+                .rev()
+                .fold(
+                    (Vec::new(), None),
+                    |(mut acc, last): (Vec<(_, _)>, Option<(_, _)>), new| {
+                        if let Some(last) = last {
+                            if let _consecutive @ false = last.0 == new.0 + 1 {
+                                acc.push(last);
+                            };
+                        }
+                        (acc, Some(new))
+                    },
+                );
+            // verify the tail, which will be the first (second) ponctuation
+            if let Some(last) = last {
+                if let Some(old_last) = ponctuations.last().cloned() {
+                    if let _consecutive @ false = old_last.0 == last.0 + 1 {
+                        ponctuations.push(last)
+                    };
+                }
+            }
+            // add a fake first, so the '#' are not messed up
+            ponctuations.push((0, '\n'));
+            let ponctuations: Vec<_> = ponctuations.into_iter().rev().collect();
+
+            ph!("{:?}", &ponctuations);
+
+            let mut last_pos = 0;
+            let mut first_addition = Some(String::new());
+            for (index, ponc) in ponctuations {
+                let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
+                if let Some(detection) = whatlang::detect_with_options(&subs, &opt) {
+                    let new_script = detection.script();
+                    if detection.is_reliable() || previous_script != Some(new_script) {
+                        // this may be unreliable,
+                        // but it's safer to change the language when the
+                        // script changes
+                        let new_lang = detection.lang();
+
+                        if previous_lang == new_lang && previous_script == Some(new_script) {
+                            // ignore.. same language and also same script..
+                        } else {
+                            // or the language has changed or the script has changed
+                            let lang_name = new_lang.eng_name().to_lowercase();
+                            use info::TargetEngine;
+                            let to_append = match target.engine {
+                                TargetEngine::Latex => {
+                                    // two backslashes are used so they can become a single backslash in the future
+                                    format!("\\\\selectlanguage{{{}}}", lang_name)
+                                }
+                                TargetEngine::Xelatex => {
+                                    // TODO
+                                    format!("")
+                                }
+                            };
+                            ns += &to_append;
+                            previous_lang = new_lang;
+
+                            // only add the "first_addition" after the language has been set
+                            if let Some(ref acc_string) = &first_addition {
+                                ns += &acc_string;
+                            };
+                            first_addition = None;
+                        }
+                        previous_script = Some(new_script);
+                    } else {
+                        // ignore.. since no (easy) detection were reliable
+                        // nor any script change were detected
+                    }
+                } else {
+                    // no language information detected
+                    // (only ponctuations, empty, etc)
+                    // so skip any change..
+                }
+                // avoid adding to the real string (ns) if the language has not been
+                // detected yet
+                if let Some(ref mut acc_string) = first_addition {
+                    *acc_string += &subs;
+                } else {
+                    // only add after it has been assured that some language has been detected
+                    // also also added to the string
+                    ns += &subs;
+                }
+                // blabla
+                last_pos = index;
+            }
+            let subs = &os.chars().skip(last_pos).collect::<String>();
+            // blabla
+            ns += subs;
+
+            // TODO: split text according to non-alphanumerics;
+
+            file.write_all(ns.as_bytes()) //
+                .with_context(wfh!(
+                    "failed to write on content file that was replaced by regex.",
+                ))?;
+        }
 
         let mut initial = match target.name {
             info::TargetName::Article => false,
@@ -308,28 +446,21 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             box_clear_foot.push((false, false, false));
 
             let mut file = File::open(&path) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
-                        e,
-                        &path
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to open content file to replace by regex. Path: <{}>",
+                    &path
+                ))?;
             let mut s = String::new();
             file.read_to_string(&mut s) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to read content file to replace by regex. Error: {:?}",
-                        e
+                .with_context(
+                    wfh!(
+                        "failed to read content file to replace by regex.",
                     )
-                })?;
+                )?;
             file = File::create(&path) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to overwrite content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to overwrite content file to replace by regex.",
+                ))?;
             // let mut s2: String = "".into();
 
             s = format!("\n{}\n", s); // adds new line around each file
@@ -340,7 +471,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             s = consts::RE_SYMB_BSLASH
                 .replace_all(&s, "\\textbackslash ")
                 .to_string();
-            if proj.info.translation.language == "tr" {
+            // return 2 back slashes into a single real (command) backslash
+            s = consts::RE_SYMB_BSLASH2.replace_all(&s, "\\").to_string();
+            if proj.info.translation.language.to_string() == "tr" {
                 s = consts::RE_SYMB_FI.replace_all(&s, "f\\/i").to_string();
                 s = consts::RE_CHAR_i_DOTTED.replace_all(&s, "i̇").to_string(); // TODO: not all is required, just chap names and opening words
                 s = consts::RE_CHAR_DOT_DOT.replace_all(&s, "̇").to_string();
@@ -355,7 +488,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             if target.has_parts {
                 ph!("start to test part!");
                 // s = RE_SUB_HASH_DOWNGRADE.replace_all(&s, "##").to_string();
-                // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$").unwrap();
+                // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$");
                 s = s
                     .lines()
                     .map(|ref line| {
@@ -363,7 +496,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         if let None = caps {
                             return line.to_string() + "\n";
                         }
-                        let caps = caps.unwrap();
+                        let caps = caps.expect(&fh!());
                         if let None = caps.get(0) {
                             return line.to_string() + "\n";
                         }
@@ -537,12 +670,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             //     .map_err(|e| format!("failed to write on content file that was replaced by regex. Error: {:?}", e))?;
 
             file.write_all(s.as_bytes()) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to write on content file that was replaced by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to write on content file that was replaced by regex.",
+                ))?;
         }
 
         // repalce every file to add footnote reset, the end of chapter box and clearpage information
@@ -556,21 +686,17 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let path = format!("{}/{}", &destination, &content);
 
             let mut file = File::open(&path) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to open content file to replace by regex. Error: {:?}. Path: <{}>",
-                        e,
-                        &path
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to open content file to replace by regex. Path: <{}>",
+                    &path
+                ))?;
             let mut s = String::new();
             file.read_to_string(&mut s) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to read content file to replace by regex. Error: {:?}",
-                        e
+                .with_context(
+                    wfh!(
+                        "failed to read content file to replace by regex."
                     )
-                })?;
+                )?;
             s.trim();
 
             let box_s = if box_clear_foot.0 { "\\utfbox" } else { "" };
@@ -578,19 +704,13 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let foot_s = if box_clear_foot.2 { "\\endfoot" } else { "" };
 
             file = File::create(&path) //
-                .with_context(|e| {
-                    fh!(
-                        "failed to overwrite content file to replace by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to overwrite content file to replace by regex.",
+                ))?;
             file.write_all(format!("\n{}{}{}{}\n", s.trim(), foot_s, box_s, clear_s).as_bytes())
-                .with_context(|e| {
-                    fh!(
-                        "failed to write on content file that was replaced by regex. Error: {:?}",
-                        e
-                    )
-                })?;
+                .with_context(wfh!(
+                    "failed to write on content file that was replaced by regex.",
+                ))?;
         }
         ph!("finished the whole substitutions");
 
@@ -635,7 +755,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
         let mut rendered = consts::TERA
             .render(&format!("{}/main.tex", target.engine), &def)
-            .unwrap();
+            .expect(&fh!());
         // .map_err(|_| format_err!("Failed to render the tex templates"))
         // .context(fh!())?;
 
@@ -651,10 +771,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             dashed_name,
             target.engine
         ))
-        .context(fh!("Falied to create latex file"))?;
+        .with_context(wfh!("Falied to create latex file"))?;
 
         mdok.write_fmt(format_args!("{}", rendered))
-            .context(fh!("Failed to write on {} tex file", target.engine))?;
+            .with_context(wfh!("Failed to write on {} tex file", target.engine))?;
 
         ph!("{} TeX file written.", target.engine);
 
@@ -663,11 +783,13 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             proj = &proj.fulldir_str(),
             tgt = &dashed_name
         ))
-        .context(fh!("Failed to canonicalize the working project directory."))?
+        .with_context(wfh!(
+            "Failed to canonicalize the working project directory."
+        ))?
         .into_os_string()
         .into_string()
         .map_err(|e| format_err!("Invalid working directory string path. Error: {:?}", e))
-        .context(fh!())?;
+        .with_context(wfh!())?;
 
         let cmd = match target.engine {
             info::TargetEngine::Latex => format!(
@@ -684,7 +806,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
         for i in 0..consts.passages {
             ph!("passage {}", i);
-            let output = Command::new("sh").args(&["-c", &cmd]).output().unwrap();
+            let output = Command::new("sh")
+                .args(&["-c", &cmd])
+                .output()
+                .with_context(wfh!())?;
             // .context(fh!("Falied to create pdf file"))?;
 
             if !output.status.success() {
@@ -716,7 +841,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 let extension =
                     Path::new(&format!("{}/main_ok_{}.pdf", &destination, target.engine))
                         .extension()
-                        .unwrap()
+                        .ok_or(feh!())?
                         .to_string_lossy()
                         .to_string();
 
@@ -733,13 +858,13 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 let out_dest = format!("{}/{}", out_dest_dir, out_dest_file);
 
                 fs::create_dir_all(&out_dest_dir)
-                    .context(fh!("Error when creating directories {}", &out_dest_dir))?;
+                    .with_context(wfh!("Error when creating directories {}", &out_dest_dir))?;
 
                 fs::copy(
                     &format!("{}/main_ok_{}.pdf", &destination, target.engine),
                     format!("{}", &out_dest),
                 )
-                .context(fh!(
+                .with_context(wfh!(
                     "Error when copying files from {}/main_ok_{}.pdf into {}.",
                     &destination,
                     target.engine,
