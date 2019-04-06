@@ -1,38 +1,254 @@
+% eg.: en
+{% set first_lang = info.translation.language %}
+{% set sec_langs = info.translation.other_languages %}
+
+% eg.: th jp
+% {% for lang in sec_langs %}
+% {{ lang }}
+% {% endfor %}
+
+% % Good links
+% % https://en.wikibooks.org/wiki/LaTeX/Internationalization
+% % https://en.wikibooks.org/wiki/LaTeX/Fonts
+
+{% if first_lang == "en"  %}
+    {% include "latex/preamble/lang/en.tex" %}
+{% elif first_lang == "pt-BR"  %}
+    \TODOLangPtBR
+{% else  %}
+    \TODOLangElse
+{% endif %}
 
 
+% OT1 (TeX text) is likely the default, more ascii-sh like
+% OT2 (U.Washington cyrillic enc)
+% OT3 (U.Washington IPA enc)
+% OT4 (Polish text enc)
+% OT6 (Armenian text enc)
+% T1 (Cork enc)
+% T2A, T2B, T2C (Cyrillic encs) but see X2, which includes all
+% T3 (IPA enc) for japanese, but should actually be called X3
+% T4 (African Latin fc)
+% T5 (Vietnamese enc)
+% T6 (Armenian)
+% T7 (Greek)
+% TS1 (Cork) for symbols
+% TS3 (IPA symbol enc)
+% X2 (Cyrillic glyph container) extended
+% C.. (CJK enc)
+% E.. (experimental enc)
+% L.. (local enc)
+% LGR (Greek) by MicroPress
+% PD1 (PDF DocEncoding) by Adobe
+% PU (PDF Unicode enc) by Adobe
 
-\pdfminorversion=6
-\pdfcompresslevel=9
-\pdfobjcompresslevel=3
+% % the babel pdf says you may use various input encodings with:
+% \addto\extrasfrench{\inputencoding{latin1}}
+% \addto\extrasrussian{\inputencoding{koi8-r}}
 
-% ---------------------------------------------------------
-
-
-\usepackage[utf8]{inputenc}
-
-% TODO: first check if latin is to be used
-\usepackage{libertine}
-\usepackage{libertinust1math}
-
-\usepackage[T1]{fontenc}
-
-
+% % obersvations
+%
+% % T1 is good for latin
+% % babel definition should be used soon after document class!
+%
+% % ------
+% % for arabic script: 
+% % Arabic, Persian, Urdu, Pashto, Kurdish, Uyghur, etc.
+% \usepackage{arabtex}
+% % or use Arabi package
+% \usepackage{cmap} % enables copy-pasting
+% \usepackage[LAE,LFE]{fontenc}
+% \usepackage[arabic,farsi]{babel}
+%
+% % ------
+% % Armenian
+% % appears to work best in xelatex
+%
+% % ------
+% % Cyrillic
+% % Bulgarian, Russian and Ukrainian
+% % something like:
+% \usepackage[T1,T2A]{fontenc}
+% \usepackage[english,bulgarian,russian,ukrainian]{babel}
+% % and just load the fonts, babel will switch when appropriate
+% % the old xelatex had some cyr stuff too (xecyr pack)
+%
+% % ------
+% % Chinese
+% \usepackage{CJK}
+% \begin{document}
+% \begin{CJK}{UTF8}{gbsn} % gbsn is the font
+% 你好
+% You can mix Latin letters and Chinese.
+% \end{CJK}
+% \end{document}
+%
+% % other fonts are: 
+% % gbsn (简体宋体, simplified Chinese)
+% % gkai (简体楷体, simplified Chinese)
+% % bsmi (繁體細上海宋體, traditional Chinese)
+% % bkai (繁體標楷體, traditional Chinese)
+%
+% % ------
+% % czech
+% \usepackage[czech]{babel}
+% % note that quotes are „czech quotation marks“
+% % if copy-pasting is necessary, see the I10n part for czech
+% % it will use cmap etc packages, depending on the font
+%
+% % ------
+% % Finnish
+% \usepackage[finnish]{babel}
+% 
+% % ------
+% % French
+% % better to load before babel
+% \documentclass[french]{article}
+% \usepackage[utf8]{inputenc}
+% \usepackage[T1]{fontenc}
+% \usepackage{lmodern} % the font..
+% \usepackage{babel} % but \usepackage[frenchb]{babel} is also possible
+% % the textcomp pack will fix the ° char
+%
+% % ------
+% % German
+% \usepackage[german]{babel}
+% % or \usepackage[ngerman]{babel} for "new" german orthography
+% % btw this is a quote in german »this« (but in Switzerland its «this»)
+% % also use the T1 encoding
+% % ziffer pack enables to use numbers like 0,5 
+% % (instead of having to use like 0{,}5 )
+%
+% % ------
+% % Greek
+% % \usepackage[english,greek]{babel} % just an example
+% % \usepackage[iso-8859-7]{inputenc} % quite different
+%
+% % the old xelatex had greek comments too (xgreek pack)
+% % maybe this also works for latex..
+%
+% % ------
+% % Hungarian
+% \usepackage[utf8]{inputenc}
+% \usepackage{t1enc} % don't know if this is different from T1
+% % \usepackage[latin2]{inputenc} % maybe this can work as well
+% \def\magyarOptions{defaults=hu-min} % maybe this is not needed
+% % \def\magyarOptions{defaults=compat-1.4} % other options..
+% % \def\magyarOptions{defaults=safest}
+% \usepackage[magyar]{babel}
+%
+% % ------
+% % Icelandic and Faroese
+% \usepackage[icelandic]{babel}
+%
+% % ------
+% % Italian
+% \usepackage[italian]{babel}
+%
+% % ------
+% % Norwegian
+% \usepackage[norsk]{babel}
+%
+% % ------
+% % Japanese
+% % check the tex package pTeX.
+% % The latex cjk support is old, but works like the chinese one
+% \documentclass{article}
+% \usepackage{CJK}
+% \begin{document}
+% \begin{CJK}{UTF8}{min} % the min is the font
+% こんにちは
+% You can mix latin letters as well as hiragana, katakana and kanji.
+% \end{CJK}
+% \end{document}
+%
+% % ------
+% % Korean
+% \usepackage{hangul} % for HLATEX (which is different form the CJK)
+% % there is also another one, hLATEXp
+% % for just the korean font, one may use:
+% \usepackage{hfont}
+% % they also have a linux group where they recommend the pack kotex
+% % check it later..
+%
+% % ------
+% % Persian
+% % there is persian in another section already.
+% % but they really recommend xelatex and the pack xepersian
+%
+% % the old xelatex had persian comments as well..
+% \defpersianfont\nastaligh[Language=Default]{IranNastaliq}
+% \renewcommand{\LettrineFontHook}{\nastaligh\color{red}}
+% 
+% % ------
+% % Polish
+% \usepackage{polski}
+% \usepackage[polish]{babel}
+% % they also recommend using mwart over article,
+% % mwbk over book,
+% % mwrep over report
+% % but since I'm in memoir, maybe I won't use it. (low priority)
+%
+% % ------
+% % Portuguese
+% \usepackage[portuguese]{babel}
+% % \usepackage[brazil]{babel} % for the brazilian case..
+%
+% % ------
+% % Slovak
+% \usepackage[slovak]{babel}
+% \usepackage[IL2]{fontenc}
+%
+% % ------
+% % Spanish
+% % \def\spanishoptions{mexico} % some options may be loaded..
+% \usepackage[spanish]{babel}
+%
+% % ------
+% % Thai
+% % better use xetex with babel or polyglossia
+% % for pdftex (idk what this is), an external tool should do the hyphenation
+% % stuff
+%
+% % example for xetex, using babel:
+% \documentclass{book}
+% \usepackage{babel}
+% \babelprovide[main, import]{thai}
+% \babelfont{rm}{FreeSerif}
+% \begin{document}
+% ปัจจุบันข้าวและพริกเป็นส่วนประกอบสำคัญที่สุดของอาหารไทย
+% \end{document}
+%
+% % ------
+% % Tibetan
+% \usepackage{ctib}
+%
+% % ------
+% % Vietnamese
+% \documentclass{article}
+% \usepackage{fontspec}%
+% \setmainfont[Ligatures=TeX]{Linux Libertine O}
+% % appearently it doesnt indicates babel..
+% % but there is viet on babel..
+% % there is also the vntex pack
+% 
+%
 
 
 % useful commands:
-
-% TODO: all languages that are to be used must be declared
-% at the beggining
-% and the last one is the main one
-
+%
+% % TODO: all languages that are to be used must be declared
+% % at the beggining
+% % and the last one is the main one
+%
 % \selectlanguage{czech}
 % % changes the "complete setup" to the language "from now on"
 % % for a kind of less-instrudive, you may do a:
 % {\selectlanguage{czech} blablabla }\selectlanguage{english}
-
+%
 % \selectlanguage{english}
 % % changes the "complete setup" to the language "from now on"
-
+%
 % % if more power is needed, such as changing left->right to right->left,
 % % use something like
 % \begin{otherlanguage}{hebrew}
@@ -40,7 +256,7 @@
 % \end{otherlanguage}
 %
 %
-
+%
 % % if only a small snippet is desired, without changing "too much", then
 %
 % \begin{otherlanguage*}{thai}
@@ -54,109 +270,3 @@
 % % this does not change names nor dates
 % % does not really require the language to be loaded
 % 
-
-
-
-
-
-
-% ---------------------------------------------------------
-
-
-
-
-
-{% if def_lang.to_dir_name == "jp"  %}
-\usepackage[japanese]{babel}
-{% else %}
-\usepackage{polyglossia}%
-{% endif %}
-
-
-\usepackage{fontspec}%
-\usepackage[space,CJKchecksingle]{xeCJK} % guess the CJKnumber, etc have no effect
-\usepackage[Latin, Thai]{ucharclasses}% TODO: add CJK
-
-\usepackage{xltxtra}
-
-% installed fonts: 
-% fandol and wadalab (cjk-fonts)
-% Linux Libertine OpenType
-% IPAex font OTF http://ipafont.ipa.go.jp/
-% tlwg OTF fonts https://www.hawaii.edu/thai/thaifonts/ 
-%  ftp://linux.thai.net/pub/thailinux/software/fonts-tlwg/fonts/
-
-{% if def_lang.to_dir_name == "jp"  %}
-\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
-\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
-\setCJKmonofont[Script=CJK]{MS Gothic}
-\XeTeXlinebreaklocale "ja"  %% Zeilenumbruch für japanische Texte
-\XeTeXlinebreakskip=0em plus 0.1em minus 0.01em
-\usepackage{setspace}
-{% elif def_lang.to_dir_name == "zh-CN" %}
-%\setCJKmainfont[
-%  BoldFont=WenQuanYi Zen Hei,
-%  ItalicFont=AR PL KaitiM GB]
-%  {AR PL SungtiL GB}
-%\setCJKsansfont{Noto Sans CJK SC}
-%\setCJKmonofont{cwTeXFangSong}
-{% elif def_lang.to_dir_name == "th" %}
-\setmainlanguage[numerals=thai]{->{{def_lang.set_lang}}}% thai
-\XeTeXlinebreaklocale "th_TH"
-\XeTeXlinebreakskip = 0pt plus 1pt  
-{% elif def_lang.to_dir_name == "bn" %}
-\setmainlanguage[changecounternumbering=true]{->{{def_lang.set_lang}}}% bengali
-{% elif def_lang.to_dir_name == "de" %}
-\setmainlanguage[script=fraktur]{->{{def_lang.set_lang}}}% german
-{% elif def_lang.to_dir_name == "my" %} % burmese
-\XeTeXlinebreaklocale "my"
-\XeTeXlinebreakskip = 0pt plus 0.1pt  
-{% else %}
-\setmainlanguage{->{{def_lang.set_lang}}}%
-{% endif %}
-
-
-{% if def_lang.to_dir_name != "en"  %}
-\setotherlanguage{english}%
-{% endif %}
-
-{% if def_lang.to_dir_name == "jp"  %}
-{% elif def_lang.to_dir_name == "zh" %}
-{% else %}
-    {% for lang in other_langs %}
-        {% if lang.to_dir_name == "jp"  %}
-
-\setCJKmainfont[Script=CJK]{MS Mincho} % for \rmfamily
-\setCJKsansfont[Script=CJK]{MS Gothic} % for \sffamily
-\setCJKmonofont[Script=CJK]{MS Gothic}
-\setotherlanguage{->{{lang.set_lang}}}%
-        {% elif lang.to_dir_name == "zh"  %}
-        {% elif lang.to_dir_name == "ko"  %}
-        {% else %}
-% \setotherlanguage{->{{lang.set_lang}}}%
-        {% endif %}
-    {% endfor %}
-{% endif %}
-
-\defaultfontfeatures{Ligatures=TeX}%
-
-
-\newfontfamily\defaultfont{Linux Libertine O}% Code2000
-\newfontfamily\latinfont{Linux Libertine O}%
-\newfontfamily\thaifont[Script=Thai]{Norasi}%
-\newfontfamily{\thaifonttt}[Script=Thai]{TlwgMono}%
-\newfontfamily\cyrillicfont[Script=Cyrillic]{Linux Libertine O}% not tested
-\newfontfamily{\cyrillicfonttt}[Script=Cyrillic]{Linux Libertine O}% not tested
-%\newfontfamily{\cjkfont}{HAN NOM A}
-%\newfontfamily{\unifiedCJKfont}{SimSun-ExtB}
-%\newCJKfontfamily\japanesefont{IPAex明朝}
-%\setCJKfamilyfont{cjk-vert}[Script=CJK,RawFeature=vertical]{IPAex明朝}
-%\newCJKfontfamily\koreafont{Baekmuk Batang}
-
-\setDefaultTransitions{\defaultfont}{}
-
-\setTransitionsForLatin{\latinfont}{}
-%\setTransitionsForCJK{\cjkfont}{}
-%\setTransitionsForJapanese{\japanesefont}{}
-%\setTransitionTo{CJKUnifiedIdeographsExtensionB}{\unifiedCJKfont}
-\setTransitionTo{Thai}{\thaifont}

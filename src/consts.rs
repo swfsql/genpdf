@@ -118,7 +118,7 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                 let oks: Vec<dir_info::DirInfo> = dir
                     .into_iter()
                     .filter_map(|lang_dir| {
-                        ph!("{:?}", lang_dir);
+                        // ph!("{:?}", lang_dir);
 
                         let lang_dir: std::fs::DirEntry =
                             lang_dir.expect(&fh!("Failed to open language directory"));

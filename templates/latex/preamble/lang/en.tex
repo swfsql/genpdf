@@ -1,0 +1,15 @@
+% allows utf8 reading from the source-code
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{libertinust1math} % \usepackage{libertine}   
+
+{% if sec_langs | length != 0 %}
+    \TODOSecundaryForEnglish
+{% else %}
+    \usepackage[english]{babel}
+    \usepackage[babel=true,kerning=true]{microtype}
+
+    % TODO: idk if this could be used in any language,
+    % so its here..
+    \usepackage{lettrine}
+{% endif %}

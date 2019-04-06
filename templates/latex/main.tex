@@ -64,16 +64,23 @@
 	{{ info_target.orientation }}
 ]{geometry}
 
+% TODO: remove this..?
 % info.target.reset_footer_active
 % info.target.reset_footer_depth: 0
 
+% TODO: remove this..?
 % info.target.clear_page_active: true
 % info.target.clear_page_depth: 1
 
-
-
-
+% language inclusion should be pretty early
 {% include "latex/preamble/lang.tex" %}
+
+% pdf size optimization
+% TODO: put this meta-stuff into somewhere else
+% perhaps also keep it after the language thing
+\pdfminorversion=6
+\pdfcompresslevel=9
+\pdfobjcompresslevel=3
 
 % shortcuts
 \usepackage{xcolor}
@@ -82,7 +89,6 @@
 \def \utfboxraw {\hfill\color{black!08}$\Box$\color{black}}
 \def \utfbox {\nopagebreak\utfboxraw}
 \def \texthash {\#}
-
 \def \endsec {\utfbox\clearpage}
 \def \endfoot {\setcounter{footnote}{0}}
 
@@ -92,51 +98,55 @@
 
 {% include "latex/preamble/cover.tex" %}
 
-
 \usepackage[footnotes,hybrid,underscores=false]{markdown}
 %\usepackage[hybrid]{markdown}
 \markdownSetup{
 	rendererPrototypes={
-    	link = {(links nor wotking for now)}
-    	% link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+    	link = {(links nor working for now)}
+    	% link = {\href{=>#2}{=>#1}\footnoteB{\href{->#2}{=>{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+
+		% old latex mobile
+		% \markdownSetup{rendererPrototypes={
+		%   link = {\href{=>#2}{=>#1}}
+		% }}
+
+		% old latex non-mobile
+		% \markdownSetup{rendererPrototypes={
+		% link = {\href{=>#2}{=>#1}\footnoteB{\href{=>#2}{=>{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
+		% }}
 	},
 	renderers = {
 		olItemWithNumber = {\item},
 	}
 }
 
-
-
+% TODO: must analyze this..
+% idk why this hidelinks is in there..
 \usepackage[hidelinks]{hyperref}
 
 
-\usepackage[protrusion=true,final]{microtype}
-
-
-
-% \usepackage{xepersian}
-% \defpersianfont\nastaligh[Language=Default]{IranNastaliq}
-% \renewcommand{\LettrineFontHook}{\nastaligh\color{red}}
-
-% https://ctan.org/pkg/xecyr % Using Cyrillic languages in XeTeX
-% https://ctan.org/pkg/xgreek % LaTeX package for typesetting Greek language documents (beta release)
-
-
-
-\usepackage{lettrine}
-
-
+% TODO: review this stuff here
 {% if sent_initial == "Zallman"  %}
-\input Zallman.fd
-\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
-\renewcommand{\LettrineFontHook}{\initialsfamily}
-\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
+
+	% TOOD: not sure if this works for pdflatex..
+	\input Zallman.fd
+	\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
+	\renewcommand{\LettrineFontHook}{\initialsfamily}
+
+	% I think this would only work for xelatex
+	% in a xelatex version, with the uchar auto stuff,
+	% before #2 and then after #2 the transitions had to be dis/enabled
+	% \newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{\disableTransitionRules#2\enableTransitionRules}{->#3}}
+
+	\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
+
 {% else %}
-\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
+	\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
 {% endif %}
 
 % prev loversize: +0.115
 
+% TODO: idk what this is
 % \newfont{\initial}{wcmr17 at 48pt}
 % \newcommand{\frstltr}[1]{
 %     \newbox{\litera}
@@ -151,7 +161,9 @@
 
 \begin{document}%
 
+% TODO: this will vary according to the taget setting
 \chapterstyle{thatcher}
+
 \frontmatter
 
 {% include "latex/cover/cover.tex" %}
@@ -170,4 +182,4 @@
 \markdownInput{->{{md.0}}}%
 {% endfor %}
 
-\end{document}
+\end{document}%
