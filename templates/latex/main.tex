@@ -149,10 +149,11 @@
 % TODO: review this stuff here
 {% if sent_initial == "Zallman"  %}
 
-	% TOOD: not sure if this works for pdflatex..
 	\input Zallman.fd
 	\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
 	\renewcommand{\LettrineFontHook}{\initialsfamily}
+
+	% TODO: Zallman may not fit alongside sans-serif fonts
 
 	% I think this would only work for xelatex
 	% in a xelatex version, with the uchar auto stuff,
