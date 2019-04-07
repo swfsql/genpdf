@@ -9,6 +9,7 @@
 {% endif %}
 
 % \thispagestyle{empty}
+\savegeometry{MemoirGeometry}
 \newgeometry{left=0cm,right=0cm,top=0cm,bottom=0cm}
 
 % Hidden text, so any 'real' text starts after (spacing) the title, etc
@@ -90,3 +91,4 @@
 
 \restoregeometry
 \clearpage
+\loadgeometry{MemoirGeometry}

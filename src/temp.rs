@@ -210,7 +210,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     // TODO: other translations information (to link among themselves)
 
     for target in proj.info.targets.clone() {
-        let dashed_name = format!("{}-{}-{}", target.name, target.size, target.reader);
+        let dashed_name = format!(
+            "{}-{}-{}-{}",
+            target.name, target.size, target.orientation, target.reader
+        );
         let destination = format!("{}/tmp/{}", &proj.fulldir_str(), dashed_name,);
         copy_files_except_tmp(
             &format!("{}/tmp/original", &proj.fulldir_str()),

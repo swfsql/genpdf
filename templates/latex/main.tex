@@ -12,7 +12,7 @@
 % article/phone/digital should have less margins
 
 \documentclass[
-	{{ info_target.font_size }},
+	extrafontsizes, {{ info_target.font_size }},
 	{% if info_target.reader == "print"  %}
 		% print settings
 		twoside,openright,
@@ -24,45 +24,66 @@
 	{% endif %}
 	{% if info_target.size == "hd720"  %}
 		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
-		ebook, % will still change in the geometry
+		a4paper, % will still change in the geometry
 	{% elif info_target.size == "wxgap"  %}
 		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
-		ebook, % will still change in the geometry
+		a4paper, % will still change in the geometry
+	{% elif info_target.size == "xga"  %}
+		% xga page_size settings (8.5151174390022in x 11.35348991867in)
+		a4paper, % will still change in the geometry
 	{% else  %}
 		% some standard page_size setting
 		{{ info_target.size }},
 	{% endif %}
+	{{ info_target.orientation }}
 ]{memoir}
 
-\usepackage[
-	% page dimension
-	{% if info_target.size == "hd720"  %}
-		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
-		paperheight=13.1154870287in,
-		paperwidth=7.3774614536439in,
-		% left=0.3173cm, % TODO: decide what TODO..
-		% top=.266cm, % TODO: decide what TODO..
-		% right=0.4533cm, % TODO: decide what TODO..
-		% bottom=0.266cm, % TODO: decide what TODO..
-		% marginparwidth=0mm, % TODO: decide what TODO..
-		% marginparsep=0mm % TODO: decide what TODO..
-	{% elif info_target.size == "wxgap"  %}
-		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
-		paperheight=7.7765271812035in,
-		paperwidth=12.442443489926in,
-		% left=0.3173cm, % TODO: decide what TODO..
-		% top=.266cm, % TODO: decide what TODO..
-		% right=0.4533cm, % TODO: decide what TODO..
-		% bottom=0.266cm, % TODO: decide what TODO..
-		% marginparwidth=0mm, % TODO: decide what TODO..
-		% marginparsep=0mm % TODO: decide what TODO..
+
+{% if info_target.size == "hd720"  %}
+	{% if info_target.orientation == "portrait"  %}
+		% 50cpl @ 25pt hd720 portrait (phone portrait)
+		\setstocksize{13.1154870287in}{7.3774614536439in} % #1 height, #2 width
+		\settrimmedsize{13.1154870287in}{7.3774614536439in}{*} % same as stock
+		\setlrmarginsandblock{20pt}{20pt}{*} % #1 left #2 right margins
+		\setheadfoot{30pt}{37pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{75pt}{38pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
 	{% else  %}
-		% ..no need to change the page dimension
-		% the memoir setting should propagate. TODO: confirm this
+		% 55cpl @ 36pt hd720 landscape (phone landscape)
+		\setstocksize{7.3774614536439in}{13.1154870287in} % #1 height, #2 width
+		\settrimmedsize{7.3774614536439in}{13.1154870287in}{*} % same as stock
+		\setlrmarginsandblock{80pt}{80pt}{*} % #1 left #2 right margins
+		\setheadfoot{45pt}{27pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{110pt}{30pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
 	{% endif %}
-	% page orientation
-	{{ info_target.orientation }}
-]{geometry}
+{% elif info_target.size == "wxgap"  %}
+	\TODOWxgapMemoirPageConfiguration
+{% elif info_target.size == "xga"  %}
+	{% if info_target.orientation == "portrait"  %}
+		% 66cpl @ 20pt xga portrait  (tablet portrait)
+		\setstocksize{11.35348991867in}{8.5151174390022in} % #1 height, #2 width
+		\settrimmedsize{11.35348991867in}{8.5151174390022in}{*} % same as stock
+		\setlrmarginsandblock{25pt}{25pt}{*} % #1 left #2 right margins
+		\setheadfoot{25pt}{30pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{60pt}{40pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% else  %}
+		% 66cpl @ 25pt xga landscape (tablet landscape)
+		\setstocksize{8.5151174390022in}{11.35348991867in} % #1 height, #2 width
+		\settrimmedsize{8.5151174390022in}{11.35348991867in}{*} % same as stock
+		\setlrmarginsandblock{70pt}{70pt}{*} % #1 left #2 right margins
+		\setheadfoot{30pt}{20pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{75pt}{35pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% endif %}
+{% else  %}
+	% no customization on memoir's geometry were done..
+{% endif %}
+
+% geometry is only used for the cover page
+% otherwise memoir tools are used instead of geometry package
+\usepackage[pass]{geometry}
 
 % TODO: remove this..?
 % info.target.reset_footer_active
@@ -166,6 +187,20 @@
 
 % TODO: this will vary according to the taget setting
 \chapterstyle{thatcher}
+{% if info_target.reader == "print"  %}
+	% print settings
+	
+	% (no changes)
+{% elif info_target.reader == "digital"  %}
+	% digital settings
+
+	% removes header and footer information
+	% (since those are metadata)
+	\pagestyle{empty}
+{% else  %}
+	\invalidReader,
+{% endif %}
+
 
 \frontmatter
 

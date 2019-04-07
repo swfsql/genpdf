@@ -112,9 +112,13 @@ pub enum TargetSize {
     // = 1280 x 720 = 16 x 9 (landscape)
     Hd720,
     // WXGA+ area into A4 paper area
-    // = 7.7765271812035 x 12.442443489926 (portrait)
+    // = 7.7765271812035in x 12.442443489926in (portrait)
     // = 1440 x 1050 = 16 x 10 (landscape)
     Wxgap,
+    // XGA area into A4 paper area
+    // = 8.5151174390022in x 11.35348991867in (portrait)
+    // = 1024 x 768 = 4 x 3 (landscape)
+    Xga,
 }
 
 #[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
@@ -144,6 +148,12 @@ pub enum TargetFontSize {
     _17pt,
     #[serde(rename = "20pt")]
     _20pt,
+    #[serde(rename = "25pt")]
+    _25pt,
+    #[serde(rename = "30pt")]
+    _30pt,
+    #[serde(rename = "36pt")]
+    _36pt,
 }
 
 #[derive(Serialize, Deserialize, Display, Debug, Clone, PartialEq, Eq, Hash)]
