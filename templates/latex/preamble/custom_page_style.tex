@@ -1,0 +1,19 @@
+{% if info_target.reader == "print"  %}
+    % print settings (always two-side pages)
+    % uses the printpagestyle, where page numbers and sub/chapter
+    % into are away from the center of the book
+
+    \makepagestyle{twoprintpagestyle}
+    % evenhead shows (---) (---) (the chapter ->)
+    \makeevenhead{twoprintpagestyle}{}{}{\footnotesize\scshape\leftmark}
+    % evenfoot shows (---) (---) (the page number ->)
+    \makeevenfoot{twoprintpagestyle}{}{}{\footnotesize\thepage}
+    % oddhead shows (<- the sub-chapter) (---) (---)
+    \makeoddhead{twoprintpagestyle}{\footnotesize\scshape\rightmark}{}{}
+    % oddfoot shows (<- the page number) (---) (---)
+    \makeoddfoot{twoprintpagestyle}{\footnotesize\thepage}{}{}
+{% elif info_target.reader == "digital"  %}
+    \makepagestyle{digitalpagestyle} % empty
+{% else  %}
+	\invalidReader,
+{% endif %}

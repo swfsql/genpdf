@@ -1,10 +1,12 @@
 use actix_web as aweb;
 use failure::Error;
 use genpdf::{consts, dir_info};
-use std::cell::Cell;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 mod handler;
+
+const SERVER_ADDR: &'static str = "127.0.0.1:8088";
+const SITE_PREFIX: &'static str = "app1/";
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -30,11 +32,11 @@ impl AppState {
 pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error> {
     use std::sync::Arc;
     let state = Arc::new(AppState::try_new(consts_path.clone()).expect(&fh!()));
-    ph!("starting web-server");
+    ph!("starting web-server at {}/{}", SERVER_ADDR, SITE_PREFIX);
     let _server = aweb::server::new(move || {
         vec![
             aweb::App::with_state(state.clone())
-                .prefix("/app1")
+                .prefix(SITE_PREFIX)
                 .resource("/", |r| r.f(handler::temporary_index))
                 .resource("/hello", |r| r.f(handler::index_state))
                 .resource("/dirs", |r| r.f(handler::get_dirs))
@@ -57,7 +59,7 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
         ]
     })
     // .workers(1)
-    .bind("127.0.0.1:8088")
+    .bind(SERVER_ADDR)
     .expect(&fh!())
     .run();
     ph!("web-server closed");

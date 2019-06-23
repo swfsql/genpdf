@@ -1,0 +1,44 @@
+% custom geometry for the papers that 
+% are not considered defaults by memoir
+
+{% if info_target.size == "hd720"  %}
+	{% if info_target.orientation == "portrait"  %}
+		% 50cpl @ 25pt hd720 portrait (phone portrait)
+		\setstocksize{13.1154870287in}{7.3774614536439in} % #1 height, #2 width
+		\settrimmedsize{13.1154870287in}{7.3774614536439in}{*} % same as stock
+		\setlrmarginsandblock{20pt}{20pt}{*} % #1 left #2 right margins
+		\setheadfoot{30pt}{37pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{75pt}{38pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% else  %}
+		% 55cpl @ 36pt hd720 landscape (phone landscape)
+		\setstocksize{7.3774614536439in}{13.1154870287in} % #1 height, #2 width
+		\settrimmedsize{7.3774614536439in}{13.1154870287in}{*} % same as stock
+		\setlrmarginsandblock{80pt}{80pt}{*} % #1 left #2 right margins
+		\setheadfoot{45pt}{27pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{110pt}{30pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% endif %}
+{% elif info_target.size == "wxgap"  %}
+	\TODOWxgapMemoirPageConfiguration
+{% elif info_target.size == "xga"  %}
+	{% if info_target.orientation == "portrait"  %}
+		% 66cpl @ 20pt xga portrait  (tablet portrait)
+		\setstocksize{11.35348991867in}{8.5151174390022in} % #1 height, #2 width
+		\settrimmedsize{11.35348991867in}{8.5151174390022in}{*} % same as stock
+		\setlrmarginsandblock{25pt}{25pt}{*} % #1 left #2 right margins
+		\setheadfoot{25pt}{30pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{60pt}{40pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% else  %}
+		% 66cpl @ 25pt xga landscape (tablet landscape)
+		\setstocksize{8.5151174390022in}{11.35348991867in} % #1 height, #2 width
+		\settrimmedsize{8.5151174390022in}{11.35348991867in}{*} % same as stock
+		\setlrmarginsandblock{70pt}{70pt}{*} % #1 left #2 right margins
+		\setheadfoot{30pt}{20pt} % #1 headheight, #2 footskip
+		\setulmarginsandblock{75pt}{35pt}{*} % #1 up #2 down margins
+		\checkandfixthelayout
+	{% endif %}
+{% else  %}
+	% no customization on memoir's geometry were done..
+{% endif %}

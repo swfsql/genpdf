@@ -1,5 +1,40 @@
-% TODO: this is just an init, please rebase on 
-% old pdf latex and also on the current english one
+% allows utf8 reading from the source-code
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 
-\usepackage[brazil]{babel}
-\usepackage[babel=true,kerning=true]{microtype}
+% font usage
+{% if info_target.reader == "print"  %}
+	% print settings
+
+    % linux libertine serif font
+    \usepackage{libertine}
+    \usepackage{libertinust1math}
+{% elif info_target.reader == "digital"  %}
+	% digital settings
+
+    % linux libertine sans-serif font (biolinum)
+    \usepackage{libertine}
+    \usepackage{libertinust1math}
+    \renewcommand*\familydefault{\sfdefault}
+
+    % % another option is carlito, but it's too dense
+    % % carlito sans-serif font
+    % % pretty similar to linux-libertine font
+    % % and it's also easier to read than biolinum
+    % \usepackage[sfdefault,lf]{carlito}
+    % \renewcommand*\oldstylenums[1]{\carlitoOsF #1}
+
+{% else  %}
+	\invalidReader,
+{% endif %}
+
+{% if sec_langs | length != 0 %}
+    \TODOSecundaryForPortuguese
+{% else %}
+    \usepackage[brazil]{babel}
+    \usepackage[babel=true,kerning=true]{microtype}
+
+    % TODO: idk if this could be used in any language,
+    % so its here..
+    \usepackage{lettrine}
+{% endif %}

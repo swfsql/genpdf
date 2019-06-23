@@ -1,0 +1,38 @@
+\chapterstyle{thatcher}
+
+% TODO: change the pagestyle according to the type of the document
+% (print, two-page, etc)
+
+% TODO: this will vary according to the taget setting
+{% if info_target.reader == "print"  %}
+	% print settings (always two-side pages)
+	% uses the printpagestyle, where page numbers and sub/chapter
+	% into are away from the center of the book
+	\pagestyle{twoprintpagestyle}
+{% elif info_target.reader == "digital"  %}
+	% digital settings
+	% removes header and footer information
+	% (since those are metadata)
+	\pagestyle{digitalpagestyle} % empty
+{% else  %}
+	\invalidReader,
+{% endif %}
+
+
+\frontmatter
+
+{% include "latex/cover/cover.tex" %}
+
+\tableofcontents
+
+{% if target == "book"  %}
+	\clearpage
+{% elif target == "article"  %}
+{% endif %}
+
+{% for md in info.content_files %}
+	{% if loop.index0 == info_target.frontmatter_depth %}
+		\mainmatter
+	{% endif %}
+\markdownInput{->{{md.0}}}%
+{% endfor %}
