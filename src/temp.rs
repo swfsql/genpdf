@@ -269,6 +269,13 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         );
 
         // setup language change
+
+        let first_lang = proj.info.translation.language.to_string();
+        let sec_langs = proj
+            .info
+            .translation
+            .other_languages
+            .clone();
         for content in proj.info.content_files.iter().map(|c| &c[0]) {
             let path = format!("{}/{}", &destination, &content);
 
@@ -348,6 +355,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut first_addition = Some(String::new());
             for (index, ponc) in ponctuations {
                 let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
+                dbg!(&subs);
                 if let Some(detection) = whatlang::detect_with_options(&subs, &opt) {
                     let new_script = detection.script();
                     if detection.is_reliable() || previous_script != Some(new_script) {
@@ -360,7 +368,43 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                             // ignore.. same language and also same script..
                         } else {
                             // or the language has changed or the script has changed
-                            let lang_name = new_lang.eng_name().to_lowercase();
+                            let lang_name = {
+                                match new_lang.eng_name().to_lowercase().as_str() {
+                                    "portuguese" => {
+                                        match first_lang.as_str() {
+                                            "pt-BR" => {
+                                                // instead of "portuguese" being inserted
+                                                // in the selectlang babel function..
+                                                "brazil"
+                                            },
+                                            TODO => {
+                                                // if it is really portuguese, need to insert "portuguese" itself
+                                                dbg!(TODO);
+                                                panic!("Need to implement other language cases");
+                                            }
+                                        }
+                                    },
+                                    "english" => {
+                                            match first_lang.as_str() {
+                                            "en" => {
+                                                "english"
+                                            },
+                                            "pt-BR" => {
+                                                "english"
+                                            },
+                                            TODO => {
+                                                // if it is really portuguese, need to insert "portuguese" itself
+                                                dbg!(TODO);
+                                                panic!("Need to implement other language cases");
+                                            }
+                                        }
+                                    }
+                                    TODO => {
+                                        dbg!(TODO);
+                                        panic!("Need to implement other language cases");
+                                    }
+                                }
+                            };
                             use info::TargetEngine;
                             let to_append = match target.engine {
                                 TargetEngine::Latex => {

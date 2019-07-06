@@ -30,6 +30,27 @@ num_cpu = 2
 # may remove the "from_url"
 
 [[all_langs]]
+from_active = true
+to_active = true
+to_dir_name = "en"
+set_lang = "english"
+title = "English"
+from_url = "https://crowdin.com/project/ancap-ch/"
+from_dir_name = "from_en"
+
+[[all_langs]]
+from_active = false
+to_active = true
+to_dir_name = "pt-BR"
+set_lang = "brazil" 
+title = "Portuguese (Brazilian)"
+from_url = ""
+from_dir_name = ""
+
+
+
+
+[[all_langs]]
 from_active = false
 to_active = false
 to_dir_name = "ar-EG"
@@ -82,15 +103,6 @@ set_lang = "german"
 title = "German"
 from_url = ""
 from_dir_name = ""
-
-[[all_langs]]
-from_active = true
-to_active = true
-to_dir_name = "en"
-set_lang = "english"
-title = "English"
-from_url = "https://crowdin.com/project/ancap-ch/"
-from_dir_name = "from_en"
 
 [[all_langs]]
 from_active = false
@@ -305,15 +317,6 @@ to_active = false # true
 to_dir_name = "pl"
 set_lang = "polish"
 title = "Polish"
-from_url = ""
-from_dir_name = ""
-
-[[all_langs]]
-from_active = false
-to_active = false # true
-to_dir_name = "pt-BR"
-set_lang = "brazil" 
-title = "Portuguese (Brazilian)"
 from_url = ""
 from_dir_name = ""
 

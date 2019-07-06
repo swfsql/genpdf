@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Thiago Machado da Silva <swfsql@gmail.com.br>"]
 
 [dependencies]
-tera = "0.10"
+tera = "0.11"
 serde = "1.0"
 serde_derive = "1.0"
 serde_yaml = "0.7"

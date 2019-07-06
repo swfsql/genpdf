@@ -29,7 +29,19 @@
 {% endif %}
 
 {% if sec_langs | length != 0 %}
-    \TODOSecundaryForPortuguese
+    {% if sec_langs | length == 1 %}
+        {% if sec_langs is containing("en") %}
+            \usepackage[english,brazil]{babel}
+            \usepackage[babel=true,kerning=true]{microtype}
+            % TODO: idk if this could be used in any language,
+            % so its here..
+            \usepackage{lettrine}
+        {% else %}
+            \TODOSecundaryAForPortuguese
+        {% endif %}
+    {% else %}
+        \TODOSecundaryForBPortuguese
+    {% endif %}
 {% else %}
     \usepackage[brazil]{babel}
     \usepackage[babel=true,kerning=true]{microtype}
