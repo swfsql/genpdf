@@ -20,7 +20,7 @@ impl AppState {
 
         // instantiate from a consts file
         let consts = consts::Consts::try_from(consts_path.as_ref())?;
-        ph!("active langs\n{:?}", consts.get_active_langs());
+        dbg!(&consts.get_active_langs());
 
         // get all projects that may be worked with
         let dirs: Vec<dir_info::DirInfo> = (&consts).into();
@@ -32,7 +32,8 @@ impl AppState {
 pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error> {
     use std::sync::Arc;
     let state = Arc::new(AppState::try_new(consts_path.clone()).expect(&fh!()));
-    ph!("starting web-server at {}/{}", SERVER_ADDR, SITE_PREFIX);
+    dbg!("starting web-server at:");
+    println!("{}/{}", SERVER_ADDR, SITE_PREFIX);
     let _server = aweb::server::new(move || {
         vec![
             aweb::App::with_state(state.clone())
@@ -62,6 +63,6 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
     .bind(SERVER_ADDR)
     .expect(&fh!())
     .run();
-    ph!("web-server closed");
+    dbg!("web-server closed");
     Ok(())
 }

@@ -31,9 +31,9 @@ macro_rules! wfeh {
 }
 
 // print here
-#[macro_export]
-macro_rules! ph {
-    () =>(println!("[{}:{}] ",file!(),line!()));
-    ($fmt:expr) =>(println!(concat!("[{}:{}] ",$fmt),file!(),line!()));
-    ($fmt:expr, $($arg:tt)*) =>(println!(concat!("[{}:{}] ",$fmt),file!(),line!(),$($arg)*));
-}
+// #[macro_export]
+// macro_rules! ph {
+//     () =>(println!("[{}:{}] ",file!(),line!()));
+//     ($fmt:expr) =>(println!(concat!("[{}:{}] ",$fmt),file!(),line!()));
+//     ($fmt:expr, $($arg:tt)*) =>(println!(concat!("[{}:{}] ",$fmt),file!(),line!(),$($arg)*));
+// }

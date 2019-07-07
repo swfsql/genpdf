@@ -348,7 +348,6 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             ponctuations.push((0, '\n'));
             let ponctuations: Vec<_> = ponctuations.into_iter().rev().collect();
 
-
             dbg!("ponctuations:");
             println!("{:?}", &ponctuations);
 
@@ -439,14 +438,14 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                                 dbg!(subs_to_skip);
 
                                 // first set the language
-                                ns = to_append.to_string() 
+                                ns = to_append.to_string()
                                     // then append the accumulated string which appeared before
                                     // any punctuation
                                     + &acc_string
                                     // then add the text that would have been "already" appended
                                     + &ns;
-                                // ns += &to_append;
-                                // ns += &acc_string;
+                            // ns += &to_append;
+                            // ns += &acc_string;
                             } else {
                                 ns += &to_append;
                             };

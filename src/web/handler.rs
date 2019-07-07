@@ -34,7 +34,8 @@ pub fn get_dirs(req: &aweb::HttpRequest<Arc<AppState>>) -> String {
 pub fn gen_projs(
     (dirs, req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
 ) -> aweb::Result<String> {
-    ph!("gen proj!! {:?}", &dirs);
+    dbg!("gen proj");
+    dbg!(&dirs);
     for dir in &dirs.dirs {
         genpdf::temp::gen_proj(dir, &req.state().consts)?;
     }
@@ -44,7 +45,8 @@ pub fn gen_projs(
 pub fn clear_projs(
     (dirs, _req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
 ) -> aweb::Result<String> {
-    ph!("clear proj!! {:?}", &dirs);
+    dbg!("clear proj: {:?}");
+    dbg!(&dirs);
     for dir in &dirs.dirs {
         genpdf::temp::clear_tmp(dir)?;
     }

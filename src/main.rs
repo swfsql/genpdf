@@ -33,6 +33,6 @@ fn main() -> Result<(), Error> {
     let static_path = PathBuf::from("web_server/static/");
     web::run_with(consts_path, static_path).expect(&fh!());
 
-    ph!("exiting pdfgen..");
+    dbg!("exiting pdfgen..");
     Ok(())
 }

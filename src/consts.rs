@@ -104,7 +104,8 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                 let from_dir_name = lang.from_dir_name.clone()?;
 
                 // eg. "en"
-                ph!("Reading towards language directory: {}", lang.to_dir_name);
+                dbg!("Reading towards language directory:");
+                println!("{:?}", &lang.to_dir_name);
 
                 // eg "$ANCAP/to_dir/from_en"
                 let dir = format!("{}/{}", &consts.all_langs_to_dir, &from_dir_name);
@@ -117,7 +118,7 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                 let oks: Vec<dir_info::DirInfo> = dir
                     .into_iter()
                     .filter_map(|lang_dir| {
-                        // ph!("{:?}", lang_dir);
+                        // dbg!("{:?}", lang_dir);
 
                         let lang_dir: std::fs::DirEntry =
                             lang_dir.expect(&fh!("Failed to open language directory"));
@@ -204,7 +205,7 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
 
 
                                     toml.write_all(toml_str.as_bytes()).unwrap();
-                                    ph!("created one for {}", &lang_dir_name);
+                                    dbg!("created one for {}", &lang_dir_name);
                                 }
                                 */
 
@@ -216,8 +217,9 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                                     info: info,
                                 };
 
-                                // ph!("\ninfo:\n{:?}\n", &dir_info.info);
-                                ph!("read info for a project in {}", &lang_dir_name.to_string());
+                                // dbg!("\ninfo:\n{:?}\n", &dir_info.info);
+                                dbg!("read info for a project in:");
+                                println!("{}", &lang_dir_name.to_string());
 
                                 return Some(dir_info);
                             })
@@ -229,7 +231,8 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                         vs.extend(v);
                         vs
                     });
-                ph!("{} different projects were identified", oks.len());
+                dbg!("different projects were identified: ");
+                dbg!(&oks.len());
                 Some(oks)
             })
             .fold(vec![], |mut vs, v| {
