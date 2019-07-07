@@ -63,6 +63,7 @@ pub fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
     Ok(())
 }
 
+/*
 pub fn chk_footnote_proj(
     proj: &dir_info::DirInfo,
     original: &dir_info::DirInfo,
@@ -76,7 +77,7 @@ pub fn chk_footnote_proj(
             .map(|md| {
                 let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).expect(&fh!());
                 let mut contents = String::new();
-                file.read_to_string(&mut contents).with_context(wfh!());
+                file.read_to_string(&mut contents).with_context(wfh!()).unwrap();
 
                 // TODO: try using scan again >_> damn you lifetimes
                 let mut foots = vec![];
@@ -101,7 +102,7 @@ pub fn chk_footnote_proj(
                 (md, foots)
             })
             .collect::<Vec<(_, Vec<_>)>>();
-        ph!("foots: <{:?}>", &ret);
+        dbg!("foots: <{:?}>", &ret);
         ret
     };
     let diff_pos = count_foots(original)
@@ -109,13 +110,13 @@ pub fn chk_footnote_proj(
         .zip(count_foots(proj))
         .enumerate()
         .inspect(|&(index, (&(ref md, ref foots_a), (_, ref foots_b)))| {
-            ph!(" {}: [{}]", index, md);
+            dbg!(" {}: [{}]", index, md);
             foots_a
                 .iter()
                 .zip(foots_b)
                 .inspect(|&(num_a, num_b)| {
                     let diff = if num_a != num_b { " ~" } else { "" };
-                    ph!("  {} == {}{}", num_a, num_b, diff);
+                    dbg!("  {} == {}{}", num_a, num_b, diff);
                 })
                 .collect::<Vec<_>>();
         })
@@ -134,6 +135,7 @@ pub fn chk_footnote_proj(
     };
     Ok(diff_pos)
 }
+*/
 
 pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(), Error> {
     info!("Working on project: {:?}\n", &proj);
@@ -152,7 +154,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         &proj.fulldir_str(),
     ))?;
 
-    ph!("res: <{:?}>", proj.info.resources);
+    dbg!(&proj.info.resources);
     if let &Some(ref ress) = &proj.info.resources {
         for res in ress {
             if let Some(ref rule) = res.rule {
@@ -163,14 +165,14 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                             &proj.base_dir, &proj.from_dir, content
                         );
                         let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
-                        ph!("antes de copiar");
+                        dbg!("antes de copiar");
                         fs::copy(&format!("{}", &origin), &format!("{}", &dest)) //
                             .with_context(wfh!(
                                 "Error when copying files from {} into {}.",
                                 &origin,
                                 &dest
                             ))?;
-                        ph!("depois de copiar");
+                        dbg!("depois de copiar");
                     }
                 }
             }
@@ -178,7 +180,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     }
 
     let mut authors: Vec<info::InfoPerson2> = vec![];
-    ph!("authors: <{:?}>", &proj.info.persons);
+    dbg!(&proj.info.persons);
     if let &Some(ref persons) = &proj.info.persons {
         for p in persons {
             if let &Some(ref rule) = &p.rule {
@@ -191,7 +193,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             }
         }
     }
-    ph!("authors: <{:?}>", &authors);
+    dbg!(&authors);
 
     // lang information
     let all_langs = consts.all_langs.clone();
@@ -226,7 +228,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             dashed_name,
         ))?;
 
-        ph!("target: <{:?}>", target);
+        dbg!(&target);
         // TODO: crop and/or resize the cover images, and replace them
 
         for cover in &target.covers {
@@ -262,7 +264,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 )?;
         }
 
-        ph!(
+        dbg!("");
+        println!(
             "Next file is <{}>, for the target <{}>. continue? [Y/n] ",
             &proj.fulldir_str(),
             &target.name
@@ -271,11 +274,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         // setup language change
 
         let first_lang = proj.info.translation.language.to_string();
-        let sec_langs = proj
-            .info
-            .translation
-            .other_languages
-            .clone();
+        let _sec_langs = proj.info.translation.other_languages.clone();
         for content in proj.info.content_files.iter().map(|c| &c[0]) {
             let path = format!("{}/{}", &destination, &content);
 
@@ -349,14 +348,16 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             ponctuations.push((0, '\n'));
             let ponctuations: Vec<_> = ponctuations.into_iter().rev().collect();
 
-            ph!("{:?}", &ponctuations);
+
+            dbg!("ponctuations:");
+            println!("{:?}", &ponctuations);
 
             let mut last_pos = 0;
             let mut first_addition = Some(String::new());
-            for (index, ponc) in ponctuations {
+            for (index, _ponc) in ponctuations {
                 let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
                 let mut subs_to_skip: usize = 0;
-                // dbg!(&subs);
+                dbg!(&subs);
                 if let Some(detection) = whatlang::detect_with_options(&subs, &opt) {
                     let new_script = detection.script();
                     if detection.is_reliable() || previous_script != Some(new_script) {
@@ -377,31 +378,27 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                                                 // instead of "portuguese" being inserted
                                                 // in the selectlang babel function..
                                                 "brazil"
-                                            },
-                                            TODO => {
-                                                // if it is really portuguese, need to insert "portuguese" itself
-                                                dbg!(TODO);
-                                                panic!("Need to implement other language cases");
                                             }
-                                        }
-                                    },
-                                    "english" => {
-                                            match first_lang.as_str() {
-                                            "en" => {
-                                                "english"
-                                            },
-                                            "pt-BR" => {
-                                                "english"
-                                            },
-                                            TODO => {
+                                            todo => {
                                                 // if it is really portuguese, need to insert "portuguese" itself
-                                                dbg!(TODO);
+                                                dbg!(todo);
                                                 panic!("Need to implement other language cases");
                                             }
                                         }
                                     }
-                                    TODO => {
-                                        dbg!(TODO);
+                                    "english" => {
+                                        match first_lang.as_str() {
+                                            "en" => "english",
+                                            "pt-BR" => "english",
+                                            todo => {
+                                                // if it is really portuguese, need to insert "portuguese" itself
+                                                dbg!(todo);
+                                                panic!("Need to implement other language cases");
+                                            }
+                                        }
+                                    }
+                                    todo => {
+                                        dbg!(todo);
                                         panic!("Need to implement other language cases");
                                     }
                                 }
@@ -419,26 +416,39 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                                 }
                             };
                             // before adding subs into ns, we better add
-                            // the first letters from subs if they are 
+                            // the first letters from subs if they are
                             // ponctuations or whitespaces
                             let (indexes, chars): (Vec<usize>, String) = subs
                                 .chars()
                                 .enumerate()
-                                .take_while(|&(_, c) : &(_, char)| !c.is_alphanumeric() && c != '\'')
+                                .take_while(|&(_, c): &(_, char)| !c.is_alphanumeric() && c != '\'')
                                 .unzip();
                             ns += &chars;
-                            subs_to_skip += if let Some(last_index) = indexes.iter().last(){
+                            subs_to_skip += if let Some(last_index) = indexes.iter().last() {
                                 last_index + 1
                             } else {
                                 0
                             };
-                            
-                            ns += &to_append;
+
                             previous_lang = new_lang;
 
                             // only add the "first_addition" after the language has been set
                             if let Some(ref acc_string) = &first_addition {
-                                ns += &acc_string;
+                                dbg!(&acc_string);
+                                dbg!(&ns);
+                                dbg!(subs_to_skip);
+
+                                // first set the language
+                                ns = to_append.to_string() 
+                                    // then append the accumulated string which appeared before
+                                    // any punctuation
+                                    + &acc_string
+                                    // then add the text that would have been "already" appended
+                                    + &ns;
+                                // ns += &to_append;
+                                // ns += &acc_string;
+                            } else {
+                                ns += &to_append;
                             };
                             first_addition = None;
                         }
@@ -454,6 +464,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 }
 
                 // skip chars that were already included
+                // some will be skipped only if the language has changed
                 let subs: String = subs.chars().skip(subs_to_skip).collect();
 
                 // avoid adding to the real string (ns) if the language has not been
@@ -465,11 +476,11 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     // also also added to the string
                     ns += &subs;
                 }
-                // blabla
+                //
                 last_pos = index;
             }
             let subs = &os.chars().skip(last_pos).collect::<String>();
-            // blabla
+            //
             ns += subs;
 
             // TODO: split text according to non-alphanumerics;
@@ -543,7 +554,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             s = consts::RE_SYMB_BSLASH2.replace_all(&s, "\\").to_string();
             if proj.info.translation.language.to_string() == "tr" {
                 s = consts::RE_SYMB_FI.replace_all(&s, "f\\/i").to_string();
-                s = consts::RE_CHAR_i_DOTTED.replace_all(&s, "i̇").to_string(); // TODO: not all is required, just chap names and opening words
+                s = consts::RE_CHAR_MINOR_I_DOTTED
+                    .replace_all(&s, "i̇")
+                    .to_string(); // TODO: not all is required, just chap names and opening words
                 s = consts::RE_CHAR_DOT_DOT.replace_all(&s, "̇").to_string();
             }
             // s = RE_SYMB_CURLY_BRACK.replace_all(&s, "\\{").to_string(); // TODO
@@ -554,7 +567,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             s = consts::RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
             // s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
             if target.has_parts {
-                ph!("start to test part!");
+                dbg!("start to test part!");
                 // s = RE_SUB_HASH_DOWNGRADE.replace_all(&s, "##").to_string();
                 // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$");
                 s = s
@@ -573,7 +586,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         if c1.chars().count() > 0 {
                             return format!("{}{}", c1.clone(), c2.clone()).to_string() + "\n";
                         } else {
-                            ph!("found a part!");
+                            dbg!("found a part!");
                             if target.clear_page_active {
                                 box_clear_foot[index - 1].0 = true;
                                 box_clear_foot[index - 1].1 = true;
@@ -588,7 +601,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         }
                     })
                     .collect::<String>();
-                ph!("finished to test part!");
+                dbg!("finished to test part!");
             }
             s = consts::RE_SYMB_HASH
                 .replace_all(&s, "$1\\texthash{}")
@@ -609,8 +622,47 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 .to_string();
             // TODO: normalize previous replacements inside math-mode
 
+            let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
+                dbg!(&line);
+                if line.starts_with(start) {
+                    initial = true;
+                    skip_initial = false;
+                    line.to_string()
+                } else if line.starts_with("#") {
+                    skip_initial = true;
+                    line.to_string()
+                } else if initial && !skip_initial {
+                    if line.trim() == "" || line.starts_with("[^") {
+                        line.to_string()
+                    } else {
+                        initial = false;
+                        let initials: String = line
+                            .chars()
+                            .take_while(|c| {
+                                c.is_alphanumeric() && !c.is_numeric() && !c.is_whitespace()
+                            })
+                            .collect();
+                        let line_start_start: String = initials.chars().take(1).collect();
+                        let line_start_end: String = initials.chars().skip(1).collect();
+                        let line_start =
+                            format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
+                        let line_end: String =
+                            line.chars().skip(initials.chars().count()).collect();
+                        dbg!(&line_start_start);
+                        if let Some(c) = line_start_start.chars().next() {
+                            inis.push(c);
+                        }
+
+                        format!("{}{}", line_start, line_end)
+                    }
+                } else {
+                    skip_initial = false;
+                    line.to_string()
+                }
+            };
+
             let mut do_section_clear = |line: &str| {
-                ph!("Debug line:\n{}", &line);
+                dbg!(&line);
                 let depth = line.chars().take_while(|&c| c == '#').count();
                 if depth == 0 {
                     // line.to_string()
@@ -643,45 +695,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 }
                 ()
             };
-            ph!("finished endfoot and endsec insertions");
-
-            let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
-                if line.starts_with(start) {
-                    initial = true;
-                    skip_initial = false;
-                    line.to_string()
-                } else if line.starts_with("#") {
-                    skip_initial = true;
-                    line.to_string()
-                } else if initial && !skip_initial {
-                    if line.trim() == "" || line.starts_with("[^") {
-                        line.to_string()
-                    } else {
-                        initial = false;
-                        let initials: String = line
-                            .chars()
-                            .take_while(|c| {
-                                c.is_alphanumeric() && !c.is_numeric() && !c.is_whitespace()
-                            })
-                            .collect();
-                        let line_start_start: String = initials.chars().take(1).collect();
-                        let line_start_end: String = initials.chars().skip(1).collect();
-                        let line_start =
-                            format!("\\DECORATE{{{}}}{{{}}}", line_start_start, line_start_end);
-                        let line_end: String =
-                            line.chars().skip(initials.chars().count()).collect();
-                        ph!("line start start: <{:?}>", &line_start_start);
-                        if let Some(c) = line_start_start.chars().next() {
-                            inis.push(c);
-                        }
-
-                        format!("{}{}", line_start, line_end)
-                    }
-                } else {
-                    skip_initial = false;
-                    line.to_string()
-                }
-            };
+            dbg!("finished endfoot and endsec insertions");
 
             match target.name {
                 info::TargetName::Article => {
@@ -700,9 +714,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
             // section clearing (new page, reset footer)
             if target.reset_footer_active || target.clear_page_active {
-                s.lines()
-                    .map(|line| do_section_clear(&line))
-                    .collect::<()>();
+                for line in s.lines() {
+                    do_section_clear(&line);
+                }
             }
 
             s = consts::RE_PATT_FOOT_ZERO
@@ -765,7 +779,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         "failed to read content file to replace by regex."
                     )
                 )?;
-            s.trim();
+            // TODO: check if needed
+            // s.trim();
 
             let box_s = if box_clear_foot.0 { "\\utfbox" } else { "" };
             let clear_s = if box_clear_foot.1 { "\\clearpage" } else { "" };
@@ -780,7 +795,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     "failed to write on content file that was replaced by regex.",
                 ))?;
         }
-        ph!("finished the whole substitutions");
+        dbg!("finished the whole substitutions");
 
         let used_initials_hs: HashSet<char> = HashSet::from_iter(used_initials);
         let sent_initial = if let Some(pos) = initials
@@ -819,7 +834,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         //     continue;
         // }
 
-        ph!("start rendering");
+        dbg!("start rendering");
 
         let mut rendered = consts::TERA
             .render(&format!("{}/main.tex", target.engine), &def)
@@ -831,7 +846,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             .replace_all(&rendered, "{")
             .to_string(); // }
 
-        ph!("finished rendering");
+        dbg!("finished rendering");
 
         let mut mdok = File::create(format!(
             "{}/tmp/{}/main_ok_{}.tex",
@@ -844,7 +859,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
         mdok.write_fmt(format_args!("{}", rendered))
             .with_context(wfh!("Failed to write on {} tex file", target.engine))?;
 
-        ph!("{} TeX file written.", target.engine);
+        dbg!("TeX file written.");
+        dbg!(&target.engine);
 
         let cdpath = fs::canonicalize(format!(
             "{proj}/tmp/{tgt}",
@@ -870,10 +886,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             ),
         };
 
-        ph!("Command:\n{:?}", &cmd);
+        dbg!(&cmd);
 
         for i in 0..consts.passages {
-            ph!("passage {}", i);
+            dbg!(i);
             let output = Command::new("sh")
                 .args(&["-c", &cmd])
                 .output()
@@ -888,9 +904,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     String::from_utf8_lossy(&output.stderr)
                 );
 
-                ph!("error when executing xelatex: \n{}", err_msg);
-
+                dbg!("error when executing xelatex");
                 bail!("Error: {}", err_msg);
+
             // bail!("Error {}.", err_msg);
             // Err(format!("error.. "));
             } else {
@@ -904,7 +920,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     continue;
                 }
 
-                ph!("preparing to copy a file..");
+                dbg!("preparing to copy a file..");
 
                 let extension =
                     Path::new(&format!("{}/main_ok_{}.pdf", &destination, target.engine))
@@ -939,7 +955,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     &out_dest
                 ))?;
 
-                ph!("\n->file copied to: \n{}\n", &out_dest);
+                dbg!("file copied to:");
+                dbg!(&out_dest);
             }
         }
     }
