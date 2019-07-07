@@ -1,11 +1,11 @@
 use super::AppState;
 use actix_web as aweb;
-use failure::Error;
+// use failure::Error;
 use genpdf::dir_info;
 use serde_json;
 use std::sync::Arc;
 
-pub fn index_state(req: &aweb::HttpRequest<Arc<AppState>>) -> String {
+pub fn index_state(_req: &aweb::HttpRequest<Arc<AppState>>) -> String {
     // let count = req.state().counter.get() + 1; // <- get count
     // req.state().counter.set(count); // <- store new count in state
 
@@ -13,9 +13,9 @@ pub fn index_state(req: &aweb::HttpRequest<Arc<AppState>>) -> String {
     format!("Example removed")
 }
 
-pub fn index(_req: &aweb::HttpRequest) -> &'static str {
-    "Hello world!"
-}
+// pub fn index(_req: &aweb::HttpRequest) -> &'static str {
+//     "Hello world!"
+// }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Dirs {
@@ -42,7 +42,7 @@ pub fn gen_projs(
 }
 
 pub fn clear_projs(
-    (dirs, req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
+    (dirs, _req): (aweb::Json<Dirs>, aweb::HttpRequest<Arc<AppState>>),
 ) -> aweb::Result<String> {
     ph!("clear proj!! {:?}", &dirs);
     for dir in &dirs.dirs {

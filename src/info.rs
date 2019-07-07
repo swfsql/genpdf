@@ -2,7 +2,6 @@ use crate::dir_info;
 use crate::{OVS, VS};
 use dir_info::LanguageTag;
 use semver;
-use std::string::ToString;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]

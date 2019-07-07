@@ -7,7 +7,6 @@ use std::path::Path;
 use tera::Tera;
 // use serde as serde_lib;
 use dir_info::LanguageTag;
-use serde;
 
 // from_dir is used as:
 // - $GEN/from_dir/
@@ -268,7 +267,7 @@ lazy_static! {
     pub static ref RE_SYMB_BSLASH2: Regex = Regex::new("\\\\textbackslash \\\\textbackslash ").unwrap();
     pub static ref RE_SYMB_FI: Regex = Regex::new("fi").unwrap();
     pub static ref RE_CHAR_I_DOTLESS: Regex = Regex::new("I").unwrap();
-    pub static ref RE_CHAR_i_DOTTED: Regex = Regex::new("i").unwrap();
+    pub static ref RE_CHAR_MINOR_I_DOTTED: Regex = Regex::new("i").unwrap();
     pub static ref RE_CHAR_DOT_DOT: Regex = Regex::new("̇̇").unwrap(); // two consecutive dots (from dotted i̇i̇)
     pub static ref RE_CHAR_CJK_COLON: Regex = Regex::new("([^\\d+])：").unwrap();
     pub static ref RE_PATT_FOOT_DEF: Regex = Regex::new("(?m)^\\[\\^\\d+\\]:").unwrap();

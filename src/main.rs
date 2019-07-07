@@ -7,11 +7,10 @@
 // depends on otf-ipafont
 
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate log;
+
+extern crate failure;
+// extern crate log;
 
 extern crate genpdf;
 

@@ -13,7 +13,6 @@ mod impls {
     use super::LanguageTag;
     use failure::Error;
     use language_tags;
-    use std::convert::TryFrom;
     use std::convert::TryInto;
     use std::hash::{Hash, Hasher};
     use std::str::FromStr;

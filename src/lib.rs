@@ -21,9 +21,9 @@ extern crate image;
 extern crate regex;
 extern crate semver;
 extern crate serde;
-extern crate strum;
+// extern crate strum;
+// extern crate isolang;
 
-extern crate isolang;
 extern crate language_tags;
 extern crate whatlang;
 
