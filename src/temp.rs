@@ -355,7 +355,8 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut first_addition = Some(String::new());
             for (index, ponc) in ponctuations {
                 let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
-                dbg!(&subs);
+                let mut subs_to_skip: usize = 0;
+                // dbg!(&subs);
                 if let Some(detection) = whatlang::detect_with_options(&subs, &opt) {
                     let new_script = detection.script();
                     if detection.is_reliable() || previous_script != Some(new_script) {
@@ -413,9 +414,25 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                                 }
                                 TargetEngine::Xelatex => {
                                     // TODO
-                                    format!("")
+                                    dbg!("");
+                                    panic!("TODO")
                                 }
                             };
+                            // before adding subs into ns, we better add
+                            // the first letters from subs if they are 
+                            // ponctuations or whitespaces
+                            let (indexes, chars): (Vec<usize>, String) = subs
+                                .chars()
+                                .enumerate()
+                                .take_while(|&(_, c) : &(_, char)| !c.is_alphanumeric() && c != '\'')
+                                .unzip();
+                            ns += &chars;
+                            subs_to_skip += if let Some(last_index) = indexes.iter().last(){
+                                last_index + 1
+                            } else {
+                                0
+                            };
+                            
                             ns += &to_append;
                             previous_lang = new_lang;
 
@@ -435,6 +452,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                     // (only ponctuations, empty, etc)
                     // so skip any change..
                 }
+
+                // skip chars that were already included
+                let subs: String = subs.chars().skip(subs_to_skip).collect();
+
                 // avoid adding to the real string (ns) if the language has not been
                 // detected yet
                 if let Some(ref mut acc_string) = first_addition {

@@ -60,6 +60,10 @@ pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResp
         <!DOCTYPE html>
         <html>
         <head>
+
+        <!-- thx Pedro Gonçalves! -->
+        <meta charset="UTF-8">
+
         <link href="https://unpkg.com/tabulator-tables@4.2.3/dist/css/tabulator_midnight.min.css" rel="stylesheet">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.3/dist/js/tabulator.min.js"></script>
