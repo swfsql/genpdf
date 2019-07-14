@@ -1,12 +1,42 @@
 {% import "latex/cover/macros.tex" as cover_macros %}
 
-{% if target == "mobile" %}
-   \def \titleU {-.7173cm}
-{% elif target == "article" %}
-   \def \titleU {-.151\paperheight}
-{% elif target == "book" %}
-    \def \titleU {-0.05\paperheight}
+% titleU is used to offset the title from the top of the page
+%
+% titleLineSkip is used to offset one title line from the bottom of the 
+% title line above it
+
+{% if info_target.size == "a4paper"  %}
+	{% if info_target.orientation == "portrait"  %}
+    \def \titleU {-0.039\paperheight}
+    \def \titleLineSkip {-02.00mm}
+	{% else  %}
+    % a4paper will likely never be used in landscape..
+    \TODOAFourCoverSettings
+	{% endif %}
+{% elif info_target.size == "hd720"  %}
+	{% if info_target.orientation == "portrait"  %}
+    \def \titleU {-.029\paperheight}
+    \def \titleLineSkip {-06.8mm}
+	{% else  %}
+    \def \titleU {-.081\paperheight}
+    \def \titleLineSkip {-07.7mm}
+	{% endif %}
+{% elif info_target.size == "wxgap"  %}
+  \TODOWxgapCoverSettings
+{% elif info_target.size == "xga"  %}
+	{% if info_target.orientation == "portrait"  %}
+    \def \titleU {-.061\paperheight}
+    \def \titleLineSkip {-04.0mm}
+	{% else  %}
+    \def \titleU {-.068\paperheight}
+    \def \titleLineSkip {-04.0mm}
+	{% endif %}
+{% else  %}
+  % still need to work on {{ info_target.size }} settings..
+  \TODOCustomCoverSettings
 {% endif %}
+
+
 
 % \thispagestyle{empty}
 \savegeometry{MemoirGeometry}

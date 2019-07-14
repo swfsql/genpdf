@@ -2,7 +2,7 @@
     {% for title in titles %}
         \begingroup\resizebox{->.878\linewidth}{->!}{\textsc{->{{title}}}}\endgroup
         {% if loop.index != titles | length %}
-            \newline\\\vspace{1mm}\newline\\
+            \newline\\\vspace*{\titleLineSkip}\newline\\
         {% endif %}
     {% endfor %}
 {% endmacro titles %}

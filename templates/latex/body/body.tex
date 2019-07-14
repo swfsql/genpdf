@@ -25,9 +25,9 @@
 
 \tableofcontents
 
-{% if target == "book"  %}
+{% if info_target.name == "book"  %}
 	\clearpage
-{% elif target == "article"  %}
+{% elif info_target.name == "article"  %}
 {% endif %}
 
 {% for md in info.content_files %}
