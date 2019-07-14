@@ -184,6 +184,7 @@ pub struct InfoTarget {
     pub font_size: TargetFontSize,
     pub reader: TargetReader,
     pub engine: TargetEngine,
+    pub titles: Option<VS>,
     pub reset_footer_active: bool,
     pub reset_footer_depth: u8,
     pub clear_page_active: bool,

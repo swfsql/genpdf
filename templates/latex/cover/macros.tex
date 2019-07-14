@@ -18,8 +18,15 @@
     {% for i in range(start=1,end=3) %}
         {% set sfx = suffix %}
         {% if i == 1 %}
-            {% set bd = self::titles(titles=info.titles) %}
-            {% set con = info.titles | length > 0  %}
+            {% if info_target.titles | length == 0 %}
+                % use fallback title
+                {% set bd = self::titles(titles=info.titles) %}
+                {% set con = info.titles | length > 0  %}
+            {% else %}
+                % use specialized title
+                {% set bd = self::titles(titles=info_target.titles) %}
+                {% set con = info_target.titles | length > 0  %}
+            {% endif %}
             {% set act = nodes.1 %}
             {% set nex = nodes.2 %}
         {% elif i == 2 %}
