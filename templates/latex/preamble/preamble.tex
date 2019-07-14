@@ -1,32 +1,51 @@
 \documentclass[
 	extrafontsizes, {{ info_target.font_size }},
+	%
 	{%- if info_target.reader == "print"  -%}
+		%
 		% print settings
 		twoside,openright,
+	%
 	{%- elif info_target.reader == "digital"  -%}
+		%
 		% digital settings
 		oneside,openany,
+	%
 	{%- else  -%}
+		%
 		\invalidReader,
+	%
 	{%- endif -%}
+		%
 	{%- if info_target.size == "hd720"  -%}
+		%
 		% hd720 page_size settings (7.3774614536439in x 13.1154870287in)
 		a4paper, % will still change in the geometry
+	%
 	{%- elif info_target.size == "wxgap"  -%}
+		%
 		% wxgap page_size settings (7.7765271812035in x 12.442443489926in)
 		a4paper, % will still change in the geometry
+	%
 	{%- elif info_target.size == "xga"  -%}
+		%
 		% xga page_size settings (8.5151174390022in x 11.35348991867in)
 		a4paper, % will still change in the geometry
+	%
 	{%- else  -%}
+		%
 		% some standard page_size setting
 		{{ info_target.size }},
+	%
 	{%- endif -%}
+	%
 	{{ info_target.orientation }}
 ]{memoir}
 
 % custom geometry for non-default paper-size (such as hd720)
-{%- include "latex/preamble/custom_geometry.tex" -%}
+%
+{% include "latex/preamble/custom_geometry.tex" %}
+%
 
 % geometry is only used for the cover page
 % otherwise memoir tools are used instead of geometry package
@@ -41,7 +60,9 @@
 % info.target.clear_page_depth: 1
 
 % language inclusion should be pretty early
-{%- include "latex/preamble/lang.tex" -%}
+%
+{% include "latex/preamble/lang.tex" %}
+%
 
 % pdf size optimization
 % TODO: put this meta-stuff into somewhere else
@@ -62,9 +83,12 @@
 
 \setcounter{tocdepth}{->{{ info_target.toc_depth }}}
 
-{%- include "latex/preamble/footnote.tex" -%}
-
-{%- include "latex/preamble/cover.tex" -%}
+%
+{% include "latex/preamble/footnote.tex" %}
+%
+%
+{% include "latex/preamble/cover.tex" %}
+%
 
 \usepackage[footnotes,hybrid,underscores=false]{markdown}
 %\usepackage[hybrid]{markdown}
@@ -94,7 +118,9 @@
 
 
 % TODO: review this stuff here
-{%- if sent_initial == "Zallman"  -%}
+%
+{%- if sent_initial == "Zallman" -%}
+	%
 
 	\input Zallman.fd
 	\newcommand*\initialsfamily{\usefont{U}{Zallman}{xl}{n}}
@@ -112,9 +138,13 @@
 
 	\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=+.115,#1]{->#2}{->#3}}
 
+%
 {%- else -%}
+	%
 	\newcommand{\DECORATE}[3][]{\lettrine[lines=3,loversize=-.055,#1]{->#2}{->#3}}
+%
 {%- endif -%}
+%
 
 % prev loversize: +0.115
 
@@ -131,4 +161,6 @@
 %     \end{wrapfigure}}
 % \frstltr{Д}олжно работать!
 
-{%- include "latex/preamble/custom_page_style.tex" -%}
+%
+{% include "latex/preamble/custom_page_style.tex" %}
+%
