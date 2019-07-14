@@ -106,17 +106,20 @@ pub enum TargetSize {
     Letterpaper,
     Executivepaper,
     Legalpaper,
-    // HD720 are into A4paper area
-    // = 7.3774614536439in x 13.1154870287in (portrait)
-    // = 1280 x 720 = 16 x 9 (landscape)
+    /// HD720 area into A4paper area
+    ///
+    /// = 7.3774614536439in x 13.1154870287in (portrait)  
+    /// = 1280 x 720 = 16 x 9 (landscape)  
     Hd720,
-    // WXGA+ area into A4 paper area
-    // = 7.7765271812035in x 12.442443489926in (portrait)
-    // = 1440 x 1050 = 16 x 10 (landscape)
+    /// WXGA+ area into A4 paper area
+    /// 
+    /// = 7.7765271812035in x 12.442443489926in (portrait)  
+    /// = 1440 x 1050 = 16 x 10 (landscape)
     Wxgap,
-    // XGA area into A4 paper area
-    // = 8.5151174390022in x 11.35348991867in (portrait)
-    // = 1024 x 768 = 4 x 3 (landscape)
+    /// XGA area into A4 paper area
+    ///
+    /// = 8.5151174390022in x 11.35348991867in (portrait)  
+    /// = 1024 x 768 = 4 x 3 (landscape)
     Xga,
 }
 
@@ -185,17 +188,61 @@ pub struct InfoTarget {
     pub reader: TargetReader,
     pub engine: TargetEngine,
     pub titles: Option<VS>,
+
+    /// Whether the footer counter may be reset, given some conditions.
     pub reset_footer_active: bool,
+
+    /// In what depth the footer should be reset.
+    /// Depths lower than that are also reset.
+    ///
+    /// ie. a higher value means the footer may reset more often.
     pub reset_footer_depth: u8,
+
+    /// Whether the page will be cleaned (skipped until the end of the
+    /// page) before a new 'chapter/section/etc', given some conditions.
     pub clear_page_active: bool,
+    
+    /// In what depth the page should be cleaned.
+    /// Depths lower than that are also cleaned.
+    /// 
+    /// ie. a higher value means the page may be cleaned more often.
     pub clear_page_depth: u8,
+
+    /// Whether the document has 'parts'
+    /// (as in `section < chapter < part`).
     pub has_parts: bool,
+
+    /// How many initial partial documents (`.md` file pieces) will be
+    /// included as a "frontmatter" (ie. dummy page counts, etc).
+    /// 
+    /// If `0`, no include is "frontmatter", the first will be already set
+    /// to "mainmatter".  
+    /// If eg. `2`, the first 2 documents included will be "frontmatter",
+    /// and the third will be already "mainmatter". 
     pub frontmatter_depth: u8,
+
+    /// In what heading depth should be shown in the TOC.
     pub toc_depth: u8,
+
+    /// Whether the mini-TOC is shown. The mini-TOC is similar to TOC but could be shown on every part/chapter/section/etc. 
     pub mini_toc_active: bool,
+
+    /// In what depth the mini-TOC should be shown.
+    /// Depths lower than that will also include the mini-TOC.
     pub mini_toc_depth: u8,
+
+    /// TODO (i don't remember)
     pub mini_toc_sec_active: bool,
+
+    /// TODO (i don't remember)
     pub mini_toc_sec_depth: u8,
+
+    /// Image files that will serve as a background.
+    /// 
+    /// This is a vector because many images may be included.
+    /// TODO: have a flag to decide whether the 'standard title'
+    /// will be drawn or not (because they may be already drawn into the
+    /// "background" image composition).
     pub covers: Vec<InfoCover>,
 }
 

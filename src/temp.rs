@@ -348,15 +348,15 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             ponctuations.push((0, '\n'));
             let ponctuations: Vec<_> = ponctuations.into_iter().rev().collect();
 
-            dbg!("ponctuations:");
-            println!("{:?}", &ponctuations);
+            // dbg!("ponctuations:");
+            // println!("{:?}", &ponctuations);
 
             let mut last_pos = 0;
             let mut first_addition = Some(String::new());
             for (index, _ponc) in ponctuations {
                 let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
                 let mut subs_to_skip: usize = 0;
-                dbg!(&subs);
+                // dbg!(&subs);
                 if let Some(detection) = whatlang::detect_with_options(&subs, &opt) {
                     let new_script = detection.script();
                     if detection.is_reliable() || previous_script != Some(new_script) {
@@ -622,7 +622,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             // TODO: normalize previous replacements inside math-mode
 
             let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
-                dbg!(&line);
+                // dbg!(&line);
                 if line.starts_with(start) {
                     initial = true;
                     skip_initial = false;
@@ -661,7 +661,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             };
 
             let mut do_section_clear = |line: &str| {
-                dbg!(&line);
+                // dbg!(&line);
                 let depth = line.chars().take_while(|&c| c == '#').count();
                 if depth == 0 {
                     // line.to_string()
