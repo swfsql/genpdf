@@ -10,7 +10,7 @@ pub fn index_state(_req: &aweb::HttpRequest<Arc<AppState>>) -> String {
     // req.state().counter.set(count); // <- store new count in state
 
     // format!("Request number: {}", count) // <- response with count
-    format!("Example removed")
+    "Example removed".into()
 }
 
 // pub fn index(_req: &aweb::HttpRequest) -> &'static str {
@@ -26,7 +26,7 @@ pub fn get_dirs(req: &aweb::HttpRequest<Arc<AppState>>) -> String {
     let dirs = Dirs {
         dirs: req.state().dirs.clone(),
     };
-    serde_json::to_string(&dirs.dirs).expect(&fh!())
+    serde_json::to_string(&dirs.dirs).unwrap_or_else(|_| panic!("{}", &fh!()))
 }
 
 // TODO: this is insecure. The received information should deal with
@@ -58,7 +58,8 @@ pub fn clear_projs(
 pub fn temporary_index(req: &aweb::HttpRequest<Arc<AppState>>) -> aweb::HttpResponse {
     let dirs = get_dirs(req);
 
-    let data = format!(r##"
+    let data = format!(
+        r##"
         <!DOCTYPE html>
         <html>
         <head>

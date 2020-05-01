@@ -112,7 +112,7 @@ pub enum TargetSize {
     /// = 1280 x 720 = 16 x 9 (landscape)  
     Hd720,
     /// WXGA+ area into A4 paper area
-    /// 
+    ///
     /// = 7.7765271812035in x 12.442443489926in (portrait)  
     /// = 1440 x 1050 = 16 x 10 (landscape)
     Wxgap,
@@ -201,10 +201,10 @@ pub struct InfoTarget {
     /// Whether the page will be cleaned (skipped until the end of the
     /// page) before a new 'chapter/section/etc', given some conditions.
     pub clear_page_active: bool,
-    
+
     /// In what depth the page should be cleaned.
     /// Depths lower than that are also cleaned.
-    /// 
+    ///
     /// ie. a higher value means the page may be cleaned more often.
     pub clear_page_depth: u8,
 
@@ -214,17 +214,17 @@ pub struct InfoTarget {
 
     /// How many initial partial documents (`.md` file pieces) will be
     /// included as a "frontmatter" (ie. dummy page counts, etc).
-    /// 
+    ///
     /// If `0`, no include is "frontmatter", the first will be already set
     /// to "mainmatter".  
     /// If eg. `2`, the first 2 documents included will be "frontmatter",
-    /// and the third will be already "mainmatter". 
+    /// and the third will be already "mainmatter".
     pub frontmatter_depth: u8,
 
     /// In what heading depth should be shown in the TOC.
     pub toc_depth: u8,
 
-    /// Whether the mini-TOC is shown. The mini-TOC is similar to TOC but could be shown on every part/chapter/section/etc. 
+    /// Whether the mini-TOC is shown. The mini-TOC is similar to TOC but could be shown on every part/chapter/section/etc.
     pub mini_toc_active: bool,
 
     /// In what depth the mini-TOC should be shown.
@@ -238,7 +238,7 @@ pub struct InfoTarget {
     pub mini_toc_sec_depth: u8,
 
     /// Image files that will serve as a background.
-    /// 
+    ///
     /// This is a vector because many images may be included.
     /// TODO: have a flag to decide whether the 'standard title'
     /// will be drawn or not (because they may be already drawn into the

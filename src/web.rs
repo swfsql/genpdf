@@ -5,8 +5,8 @@ use std::path::PathBuf;
 
 mod handler;
 
-const SERVER_ADDR: &'static str = "127.0.0.1:8088";
-const SITE_PREFIX: &'static str = "app1/";
+const SERVER_ADDR: &str = "127.0.0.1:8088";
+const SITE_PREFIX: &str = "app1/";
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -31,10 +31,10 @@ impl AppState {
 
 pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error> {
     use std::sync::Arc;
-    let state = Arc::new(AppState::try_new(consts_path.clone()).expect(&fh!()));
+    let state = Arc::new(AppState::try_new(consts_path).unwrap_or_else(|_| panic!("{}", &fh!())));
     dbg!("starting web-server at:");
     println!("{}/{}", SERVER_ADDR, SITE_PREFIX);
-    let _server = aweb::server::new(move || {
+    aweb::server::new(move || {
         vec![
             aweb::App::with_state(state.clone())
                 .prefix(SITE_PREFIX)
@@ -53,7 +53,7 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
                 .handler(
                     "/static/",
                     aweb::fs::StaticFiles::new(static_path.clone())
-                        .expect(&fh!())
+                        .unwrap_or_else(|_| panic!("{}", &fh!()))
                         .show_files_listing(),
                 )
                 .boxed(),
@@ -61,7 +61,7 @@ pub fn run_with(consts_path: PathBuf, static_path: PathBuf) -> Result<(), Error>
     })
     // .workers(1)
     .bind(SERVER_ADDR)
-    .expect(&fh!())
+    .unwrap_or_else(|_| panic!("{}", &fh!()))
     .run();
     dbg!("web-server closed");
     Ok(())

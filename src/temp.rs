@@ -47,7 +47,11 @@ pub fn copy_files_except_tmp(from: &str, to: &str) -> Result<(), Error> {
         if path.path().ends_with("tmp") {
             continue;
         }
-        let dst = Path::new(to).join(path.path().file_name().expect(&fh!()));
+        let dst = Path::new(to).join(
+            path.path()
+                .file_name()
+                .unwrap_or_else(|| panic!("{}", &fh!())),
+        );
         let meta = path
             .metadata()
             .with_context(wfh!("Failed to read {} metadata.", path.path().display()))?;
@@ -75,7 +79,7 @@ pub fn chk_footnote_proj(
             .iter()
             .map(|vs| vs[0].clone())
             .map(|md| {
-                let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).expect(&fh!());
+                let mut file = File::open(format!("{}/{}", dir.fulldir_str(), md)).unwrap_or_else(|_| panic!("{}", &fh!()));
                 let mut contents = String::new();
                 file.read_to_string(&mut contents).with_context(wfh!()).unwrap();
 
@@ -137,6 +141,7 @@ pub fn chk_footnote_proj(
 }
 */
 
+#[allow(clippy::cognitive_complexity)]
 pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(), Error> {
     info!("Working on project: {:?}\n", &proj);
 
@@ -155,7 +160,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     ))?;
 
     dbg!(&proj.info.resources);
-    if let &Some(ref ress) = &proj.info.resources {
+    if let Some(ref ress) = &proj.info.resources {
         for res in ress {
             if let Some(ref rule) = res.rule {
                 if rule == "front_cover" {
@@ -166,7 +171,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         );
                         let dest = &format!("{}/tmp/original/{}", &proj.fulldir_str(), content);
                         dbg!("antes de copiar");
-                        fs::copy(&format!("{}", &origin), &format!("{}", &dest)) //
+                        fs::copy(&origin, &dest) //
                             .with_context(wfh!(
                                 "Error when copying files from {} into {}.",
                                 &origin,
@@ -181,12 +186,12 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
     let mut authors: Vec<info::InfoPerson2> = vec![];
     dbg!(&proj.info.persons);
-    if let &Some(ref persons) = &proj.info.persons {
+    if let Some(ref persons) = &proj.info.persons {
         for p in persons {
-            if let &Some(ref rule) = &p.rule {
+            if let Some(ref rule) = &p.rule {
                 if rule == "author" {
                     let person = info::InfoPerson2 {
-                        name: p.identifier.clone().ok_or(feh!())?,
+                        name: p.identifier.clone().ok_or_else(|| feh!())?,
                     };
                     authors.push(person);
                 }
@@ -204,9 +209,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
     let def_lang: dir_info::Lang = def_lang
         .into_iter()
         .next()
-        .ok_or(format_err!(
-            "Failed to get the default language information from preset"
-        ))
+        .ok_or_else(|| format_err!("Failed to get the default language information from preset"))
         .with_context(wfh!())?;
 
     // TODO: other translations information (to link among themselves)
@@ -233,7 +236,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
         for cover in &target.covers {
             let img_filepath = format!("{}/{}", &destination, cover.cover_file);
-            let mut crop;
+            let crop;
             {
                 let mut img = image::open(&img_filepath) //
                     .with_context(wfh!(
@@ -288,10 +291,10 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut file = File::create(&path) //
                 .with_context(wfh!("failed to overwrite content file"))?;
 
-            use std::convert::TryInto;
             use whatlang::Script;
 
-            let base: whatlang::Lang = proj.info.translation.language.clone().try_into()?;
+            let base: whatlang::Lang =
+                dir_info::tag_try_into_whatlang(proj.info.translation.language.clone())?;
 
             let mut whitelist: Vec<whatlang::Lang> = proj
                 .info
@@ -299,14 +302,14 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 .other_languages
                 .iter()
                 .cloned()
-                .map(TryInto::try_into)
+                .map(dir_info::tag_try_into_whatlang)
                 .collect::<Result<_, _>>()?;
             // pushes the base language
             whitelist.push(base.clone());
 
             let opt = whatlang::Options::new().set_whitelist(whitelist);
 
-            let mut previous_lang = base.clone();
+            let mut previous_lang = base;
             let mut previous_script: Option<Script> = None;
 
             // get ponctuation positions, except for ' ponctuation
@@ -571,32 +574,32 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 // pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("^#(#*)([^#]*)$");
                 s = s
                     .lines()
-                    .map(|ref line| {
+                    .map(|line| {
                         let caps = consts::RE_SUB_HASH_DOWNGRADE.captures(&line);
-                        if let None = caps {
+                        if caps.is_none() {
                             return line.to_string() + "\n";
                         }
-                        let caps = caps.expect(&fh!());
-                        if let None = caps.get(0) {
+                        let caps = caps.unwrap_or_else(|| panic!("{}", &fh!()));
+                        if caps.get(0).is_none() {
                             return line.to_string() + "\n";
                         }
-                        let c1 = caps.get(1).map_or("", |c| c.as_str().clone());
-                        let c2 = caps.get(2).map_or("", |c| c.as_str().clone());
+                        let c1 = caps.get(1).map_or("", |c| c.as_str());
+                        let c2 = caps.get(2).map_or("", |c| c.as_str());
                         if c1.chars().count() > 0 {
-                            return format!("{}{}", c1.clone(), c2.clone()).to_string() + "\n";
+                            format!("{}{}", c1, c2) + "\n"
                         } else {
                             dbg!("found a part!");
                             if target.clear_page_active {
                                 box_clear_foot[index - 1].0 = true;
                                 box_clear_foot[index - 1].1 = true;
-                                for i in 0..9 {
-                                    sec_active[i] = false;
+                                for a in sec_active.iter_mut().take(9) {
+                                    *a = false;
                                 }
                             }
                             if target.reset_footer_active {
                                 box_clear_foot[index - 1].2 = true;
                             }
-                            return format!("\\part{{{}}}", c2.clone()).clone() + "\n";
+                            format!("\\part{{{}}}", c2) + "\n"
                         }
                     })
                     .collect::<String>();
@@ -621,6 +624,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 .to_string();
             // TODO: normalize previous replacements inside math-mode
 
+            #[allow(clippy::single_char_pattern)]
             let mut do_initial = |line: &str, start: &str, inis: &mut Vec<char>| {
                 // dbg!(&line);
                 if line.starts_with(start) {
@@ -661,13 +665,13 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             };
 
             let mut do_section_clear = |line: &str| {
-                // dbg!(&line);
+                dbg!(&line);
                 let depth = line.chars().take_while(|&c| c == '#').count();
                 if depth == 0 {
                     // line.to_string()
                 } else {
-                    for i in depth..9 {
-                        sec_active[i] = false;
+                    for a in sec_active.iter_mut().skip(depth).take(9) {
+                        *a = false;
                     }
                     if sec_active[depth - 1] {
                         // let line_start: String = "".into();
@@ -692,7 +696,6 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                         // line.to_string()
                     }
                 }
-                ()
             };
             dbg!("finished endfoot and endsec insertions");
 
@@ -837,7 +840,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
         let mut rendered = consts::TERA
             .render(&format!("{}/main.tex", target.engine), &def)
-            .expect(&fh!());
+            .unwrap_or_else(|_| panic!("{}", &fh!()));
         // .map_err(|_| format_err!("Failed to render the tex templates"))
         // .context(fh!())?;
 
@@ -924,7 +927,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
                 let extension =
                     Path::new(&format!("{}/main_ok_{}.pdf", &destination, target.engine))
                         .extension()
-                        .ok_or(feh!())?
+                        .ok_or_else(|| feh!())?
                         .to_string_lossy()
                         .to_string();
 
@@ -945,7 +948,7 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
                 fs::copy(
                     &format!("{}/main_ok_{}.pdf", &destination, target.engine),
-                    format!("{}", &out_dest),
+                    out_dest.clone(),
                 )
                 .with_context(wfh!(
                     "Error when copying files from {}/main_ok_{}.pdf into {}.",

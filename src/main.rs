@@ -26,12 +26,12 @@ mod web;
 use failure::Error;
 
 fn main() -> Result<(), Error> {
-    env_logger::init().expect(&fh!());
+    env_logger::init().unwrap_or_else(|_| panic!("{}", &fh!()));
 
     use std::path::PathBuf;
     let consts_path = PathBuf::from("consts.toml");
     let static_path = PathBuf::from("web_server/static/");
-    web::run_with(consts_path, static_path).expect(&fh!());
+    web::run_with(consts_path, static_path).unwrap_or_else(|_| panic!("{}", &fh!()));
 
     dbg!("exiting pdfgen..");
     Ok(())

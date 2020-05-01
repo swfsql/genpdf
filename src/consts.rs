@@ -1,3 +1,5 @@
+#![allow(clippy::trivial_regex)]
+
 use crate::dir_info;
 use crate::VS;
 use regex::Regex;
@@ -54,7 +56,7 @@ impl Consts {
     pub fn get_active_langs(&self) -> HashSet<LanguageTag> {
         self.all_langs.iter().fold(HashSet::new(), |mut hs, l| {
             if l.to_active {
-                hs.insert(l.to_dir_name.clone().into());
+                hs.insert(l.to_dir_name.clone());
                 hs
             } else {
                 hs
@@ -113,18 +115,27 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                 use std::fs;
 
                 let dir = fs::read_dir(&dir) //
-                .expect(&fh!("Failed to open the contents of {} directory.", &dir));
+                    .unwrap_or_else(|_e| {
+                        panic!(
+                            "{}",
+                            &fh!("Failed to open the contents of {} directory.", &dir)
+                        )
+                    });
 
                 let oks: Vec<dir_info::DirInfo> = dir
-                    .into_iter()
                     .filter_map(|lang_dir| {
                         // dbg!("{:?}", lang_dir);
 
-                        let lang_dir: std::fs::DirEntry =
-                            lang_dir.expect(&fh!("Failed to open language directory"));
+                        let lang_dir: std::fs::DirEntry = lang_dir.unwrap_or_else(|_e| {
+                            panic!("{}", &fh!("Failed to open language directory"))
+                        });
 
                         // only accept directories
-                        if lang_dir.metadata().expect(&fh!()).is_file() {
+                        if lang_dir
+                            .metadata()
+                            .unwrap_or_else(|_e| panic!("{}", &fh!()))
+                            .is_file()
+                        {
                             return None;
                         }
 
@@ -134,7 +145,7 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                         // eg. "fa"
                         let lang_dir_name = lang_dir
                             .file_name()
-                            .expect(&fh!())
+                            .unwrap_or_else(|| panic!("{}", &fh!()))
                             .to_string_lossy()
                             .to_string();
 
@@ -145,9 +156,9 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
 
                         use std::str::FromStr;
                         let lang_dir_name = LanguageTag::from_str(&lang_dir_name)
-                            .expect(&fh!("{:?}", &lang_dir_name));
+                            .unwrap_or_else(|_e| panic!("{}", &fh!("{:?}", &lang_dir_name)));
                         // .map_err(wfeh!())?;
-                        let lang_dir_name: LanguageTag = lang_dir_name.into();
+                        let lang_dir_name: LanguageTag = lang_dir_name;
 
                         // filter out if such to_lang is deactivated
                         if !consts.get_active_langs().contains(&lang_dir_name) {
@@ -155,17 +166,17 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                         }
 
                         let proj_dirs = fs::read_dir(lang_dir) //
-                            .expect(&fh!());
+                            .unwrap_or_else(|_| panic!("{}", &fh!()));
                         let dir_infos: Vec<dir_info::DirInfo> = proj_dirs
-                            .into_iter()
                             .filter_map(|proj_dir| {
                                 // eg. "$ANCAP/to_dir/from_en/ms/UPB"
-                                let proj_dir = proj_dir.expect(&fh!()).path();
+                                let proj_dir =
+                                    proj_dir.unwrap_or_else(|_| panic!("{}", &fh!())).path();
 
                                 // eg. "UPB"
                                 let proj_dir_name = proj_dir
                                     .file_name()
-                                    .expect(&fh!())
+                                    .unwrap_or_else(|| panic!("{}", &fh!()))
                                     .to_string_lossy()
                                     .to_string();
 
@@ -183,10 +194,16 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                                 // eg. "version = "0.1.4"\ntitles = ..."
                                 let tomlc = fs::read_to_string(proj_dir.join("info.toml")).ok()?;
 
-                                let info: crate::info::Info = toml::from_str(&tomlc).expect(&fh!(
+                                let info: crate::info::Info = toml::from_str(&tomlc)
+                                    .unwrap_or_else(|_| {
+                                        panic!(
+                                            "{}",
+                                            &fh!(
                                     "Failed to parse the toml info file contents <{:?}>",
                                     &proj_dir.join("info.toml")
-                                ));
+                                )
+                                        )
+                                    });
 
                                 if info.version < consts.min_ver {
                                     return None;
@@ -210,18 +227,18 @@ impl Into<Vec<dir_info::DirInfo>> for &Consts {
                                 */
 
                                 let dir_info = dir_info::DirInfo {
-                                    base_dir: format!("{}", &consts.all_langs_to_dir),
-                                    from_dir: format!("{}", &from_dir_name),
-                                    lang_dir: format!("{}", &lang_dir_name.to_string()),
-                                    proj_dir: format!("{}", &proj_dir_name),
-                                    info: info,
+                                    base_dir: consts.all_langs_to_dir.clone(),
+                                    from_dir: from_dir_name.clone(),
+                                    lang_dir: lang_dir_name.to_string(),
+                                    proj_dir: proj_dir_name,
+                                    info,
                                 };
 
                                 // dbg!("\ninfo:\n{:?}\n", &dir_info.info);
                                 dbg!("read info for a project in:");
                                 println!("{}", &lang_dir_name.to_string());
 
-                                return Some(dir_info);
+                                Some(dir_info)
                             })
                             .collect::<Vec<dir_info::DirInfo>>();
 
