@@ -273,12 +273,16 @@ lazy_static! {
     pub static ref RE_SUB_HASH_DOWNGRADE: Regex = Regex::new("(?m)^#(#*)([^#]*)$").unwrap();
 
     pub static ref RE_SYMB_AMPER: Regex = Regex::new("&").unwrap();
+    /// late-escape. raw input uses \& to indicate that they really want just an &
+    /// this is because \& will first become \\&{}.
+    pub static ref RE_SYMB_AMPER_ESCAPED: Regex = Regex::new("\\\\\\\\&\\{\\}").unwrap();
     pub static ref RE_SYMB_DOLLAR: Regex = Regex::new("\\$").unwrap();
     pub static ref RE_SYMB_CURLY_BRACK: Regex = Regex::new("\\{").unwrap();
     pub static ref RE_SYMB_CURLY_BRACK2: Regex = Regex::new("\\}").unwrap();
     pub static ref RE_SYMB_PERCENT: Regex = Regex::new("%").unwrap();
     pub static ref RE_SYMB_HASH: Regex = Regex::new("([^#\n])#").unwrap();
     pub static ref RE_SYMB_CII: Regex = Regex::new("([^\\[])\\^").unwrap();
+    pub static ref RE_SYMB_CII_ESCAPED: Regex = Regex::new("\\\\\\\\textasciicircum\\{\\}").unwrap();
     pub static ref RE_SYMB_TILDE: Regex = Regex::new("~").unwrap();
     pub static ref RE_SYMB_DOT_4: Regex = Regex::new("::::").unwrap();
     pub static ref RE_SYMB_COLON_2: Regex = Regex::new("\n::(.*?)::\n").unwrap();

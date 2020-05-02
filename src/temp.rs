@@ -312,6 +312,71 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut previous_lang = base;
             let mut previous_script: Option<Script> = None;
 
+            // get all display-math-mode positions
+            let maths = os
+                .chars()
+                .enumerate()
+                .filter(|(_i, c)| *c == ':')
+                .peekable()
+                .fold(
+                    (None, 0usize, None, Vec::new()),
+                    |(in_math, count, last, mut acc), (i, c)| {
+                        match (in_math, count) {
+                            // <:>
+                            (None, 0usize) => (None, 1, Some(i), acc),
+                            // <::> or <: .. :>
+                            (None, 1) => {
+                                let last = last.unwrap();
+                                if last + 1 == i {
+                                    // <::>
+                                    (None, 2, Some(i), acc)
+                                } else {
+                                    // <:>
+                                    // reseted
+                                    (None, 1, Some(i), acc)
+                                }
+                            }
+                            // <:::> or <:: ... :>
+                            (None, 2) => {
+                                let last = last.unwrap();
+                                if last + 1 == i {
+                                    // <:::>
+                                    (None, 3, Some(i), acc)
+                                } else {
+                                    // <:: .. :>
+                                    (Some(last - 1), 1, Some(i), acc)
+                                }
+                            }
+                            // <::::> or <::: .. :>
+                            (None, n) => {
+                                let last = last.unwrap();
+                                if last + 1 == i {
+                                    // <::::>
+                                    (None, n + 1, Some(i), acc)
+                                } else {
+                                    // <::: .. :>
+                                    (None, 1, Some(i), acc)
+                                }
+                            }
+                            // <:: ... ::> or <:: ... : .. :>
+                            (Some(init_math), 1) => {
+                                let last = last.unwrap();
+                                if last + 1 == i {
+                                    // <:: ... ::>
+                                    acc.push((init_math, i));
+                                    // reset
+                                    (None, 0, None, acc)
+                                } else {
+                                    // <:: .. : .. :>
+                                    (Some(init_math), 1, Some(i), acc)
+                                }
+                            }
+                            (Some(_n), _m) => unreachable!(),
+                        }
+                    },
+                )
+                .3;
+
             // get ponctuation positions, except for ' ponctuation
             let (mut ponctuations, last) = os
                 .chars()
@@ -357,6 +422,14 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             let mut last_pos = 0;
             let mut first_addition = Some(String::new());
             for (index, _ponc) in ponctuations {
+                // skip if index is inside a math env
+                if let Some((start, _end)) =
+                    maths.iter().take_while(|(_start, end)| index < *end).last()
+                {
+                    if *start < index {
+                        continue;
+                    }
+                }
                 let subs: String = os.chars().skip(last_pos).take(index - last_pos).collect();
                 let mut subs_to_skip: usize = 0;
                 // dbg!(&subs);
@@ -370,90 +443,91 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
 
                         if previous_lang == new_lang && previous_script == Some(new_script) {
                             // ignore.. same language and also same script..
+                            previous_script = Some(new_script);
+                            continue;
+                        }
+                        // or the language has changed or the script has changed
+                        let lang_name = {
+                            match new_lang.eng_name().to_lowercase().as_str() {
+                                "portuguese" => {
+                                    match first_lang.as_str() {
+                                        "pt-BR" => {
+                                            // instead of "portuguese" being inserted
+                                            // in the selectlang babel function..
+                                            "brazil"
+                                        }
+                                        todo => {
+                                            // if it is really portuguese, need to insert "portuguese" itself
+                                            dbg!(todo);
+                                            panic!("Need to implement other language cases");
+                                        }
+                                    }
+                                }
+                                "english" => {
+                                    match first_lang.as_str() {
+                                        "en" => "english",
+                                        "pt-BR" => "english",
+                                        todo => {
+                                            // if it is really portuguese, need to insert "portuguese" itself
+                                            dbg!(todo);
+                                            panic!("Need to implement other language cases");
+                                        }
+                                    }
+                                }
+                                todo => {
+                                    dbg!(todo);
+                                    panic!("Need to implement other language cases");
+                                }
+                            }
+                        };
+                        use info::TargetEngine;
+                        let to_append = match target.engine {
+                            TargetEngine::Latex => {
+                                // two backslashes are used so they can become a single backslash in the future
+                                format!("\\\\selectlanguage{{{}}}", lang_name)
+                            }
+                            TargetEngine::Xelatex => {
+                                // TODO
+                                dbg!("");
+                                panic!("TODO")
+                            }
+                        };
+                        // before adding subs into ns, we better add
+                        // the first letters from subs if they are
+                        // ponctuations or whitespaces
+                        let (indexes, chars): (Vec<usize>, String) = subs
+                            .chars()
+                            .enumerate()
+                            .take_while(|&(_, c): &(_, char)| !c.is_alphanumeric() && c != '\'')
+                            .unzip();
+                        ns += &chars;
+                        subs_to_skip += if let Some(last_index) = indexes.iter().last() {
+                            last_index + 1
                         } else {
-                            // or the language has changed or the script has changed
-                            let lang_name = {
-                                match new_lang.eng_name().to_lowercase().as_str() {
-                                    "portuguese" => {
-                                        match first_lang.as_str() {
-                                            "pt-BR" => {
-                                                // instead of "portuguese" being inserted
-                                                // in the selectlang babel function..
-                                                "brazil"
-                                            }
-                                            todo => {
-                                                // if it is really portuguese, need to insert "portuguese" itself
-                                                dbg!(todo);
-                                                panic!("Need to implement other language cases");
-                                            }
-                                        }
-                                    }
-                                    "english" => {
-                                        match first_lang.as_str() {
-                                            "en" => "english",
-                                            "pt-BR" => "english",
-                                            todo => {
-                                                // if it is really portuguese, need to insert "portuguese" itself
-                                                dbg!(todo);
-                                                panic!("Need to implement other language cases");
-                                            }
-                                        }
-                                    }
-                                    todo => {
-                                        dbg!(todo);
-                                        panic!("Need to implement other language cases");
-                                    }
-                                }
-                            };
-                            use info::TargetEngine;
-                            let to_append = match target.engine {
-                                TargetEngine::Latex => {
-                                    // two backslashes are used so they can become a single backslash in the future
-                                    format!("\\\\selectlanguage{{{}}}", lang_name)
-                                }
-                                TargetEngine::Xelatex => {
-                                    // TODO
-                                    dbg!("");
-                                    panic!("TODO")
-                                }
-                            };
-                            // before adding subs into ns, we better add
-                            // the first letters from subs if they are
-                            // ponctuations or whitespaces
-                            let (indexes, chars): (Vec<usize>, String) = subs
-                                .chars()
-                                .enumerate()
-                                .take_while(|&(_, c): &(_, char)| !c.is_alphanumeric() && c != '\'')
-                                .unzip();
-                            ns += &chars;
-                            subs_to_skip += if let Some(last_index) = indexes.iter().last() {
-                                last_index + 1
-                            } else {
-                                0
-                            };
+                            0
+                        };
 
-                            previous_lang = new_lang;
+                        previous_lang = new_lang;
 
-                            // only add the "first_addition" after the language has been set
-                            if let Some(ref acc_string) = &first_addition {
-                                dbg!(&acc_string);
-                                dbg!(&ns);
-                                dbg!(subs_to_skip);
+                        // only add the "first_addition" after the language has been set
+                        if let Some(ref acc_string) = &first_addition {
+                            dbg!(&acc_string);
+                            dbg!(&ns);
+                            dbg!(subs_to_skip);
 
-                                // first set the language
-                                ns = to_append.to_string()
+                            // first set the language
+                            ns = to_append.to_string()
                                     // then append the accumulated string which appeared before
                                     // any punctuation
                                     + &acc_string
                                     // then add the text that would have been "already" appended
                                     + &ns;
-                            // ns += &to_append;
-                            // ns += &acc_string;
-                            } else {
-                                ns += &to_append;
-                            };
-                            first_addition = None;
-                        }
+                        // ns += &to_append;
+                        // ns += &acc_string;
+                        } else {
+                            ns += &to_append;
+                        };
+                        first_addition = None;
                         previous_script = Some(new_script);
                     } else {
                         // ignore.. since no (easy) detection were reliable
@@ -565,6 +639,9 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             // s = RE_SYMB_CURLY_BRACK2.replace_all(&s, "\\}").to_string(); // TODO
             // TODO underline...
             s = consts::RE_SYMB_AMPER.replace_all(&s, "\\&{}").to_string();
+            s = consts::RE_SYMB_AMPER_ESCAPED
+                .replace_all(&s, "&")
+                .to_string();
             s = consts::RE_SYMB_DOLLAR.replace_all(&s, "\\${}").to_string();
             s = consts::RE_SYMB_PERCENT.replace_all(&s, "\\%{}").to_string();
             // s = RE_SUB_HASH_SPACE_HASH.replace_all(&s, "##").to_string(); // # # -> ## (crowdin messed this up)
@@ -611,13 +688,14 @@ pub fn gen_proj(proj: &dir_info::DirInfo, consts: &consts::Consts) -> Result<(),
             s = consts::RE_SYMB_CII
                 .replace_all(&s, "$1\\textasciicircum{}")
                 .to_string();
+            s = consts::RE_SYMB_CII_ESCAPED.replace_all(&s, "^").to_string();
             s = consts::RE_SYMB_DOT_4.replace_all(&s, "    ").to_string();
             s = consts::RE_SYMB_TILDE
                 .replace_all(&s, "\\textasciitilde{}")
                 .to_string();
             s = consts::RE_CHAR_CJK_COLON.replace_all(&s, "$1:").to_string();
             s = consts::RE_SYMB_COLON_2
-                .replace_all(&s, "$$$ $1 $$$")
+                .replace_all(&s, "\n$$$ $1 $$$\n")
                 .to_string(); // $1$ ::X::
             s = consts::RE_SYMB_COLON_2_INLINE
                 .replace_all(&s, "$$ $1 $$")
