@@ -94,18 +94,25 @@
 %\usepackage[hybrid]{markdown}
 \markdownSetup{
 	rendererPrototypes={
-    	link = {(links not working for now)}
-    	% link = {\href{=>#2}{=>#1}\footnoteB{\href{->#2}{=>{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
-
-		% old latex mobile
-		% \markdownSetup{rendererPrototypes={
-		%   link = {\href{=>#2}{=>#1}}
-		% }}
-
-		% old latex non-mobile
-		% \markdownSetup{rendererPrototypes={
-		% link = {\href{=>#2}{=>#1}\footnoteB{\href{=>#2}{=>{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}
-		% }}
+		%
+		{%- if info_target.reader == "print"  -%}
+			%
+			% print settings
+			link = {\href{->#2}{->#1}\footnoteB{\href{->#2}{->{\ttfamily\scriptsize\relax$ \langle $#2$ \rangle $}}}}%
+		%
+		{%- elif info_target.reader == "digital"  -%}
+			%
+			% digital settings
+			% \markdownSetup{rendererPrototypes={
+			link = {\href{->#2}{->#1}}%
+			% }}
+		%
+		{%- else  -%}
+			%
+			\invalidReader,
+		%
+		{%- endif -%}
+		%
 	},
 	renderers = {
 		olItemWithNumber = {\item},
